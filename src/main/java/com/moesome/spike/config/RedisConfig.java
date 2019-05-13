@@ -8,11 +8,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 
 @Configuration
 public class RedisConfig {
-	public static final int EXPIRE_SECOND = 3600*24 * 2;
+	public static final int EXPIRE_SECOND = 3600*24*7;
 
 	@Autowired
 	private RedisProperties redisProperties;
@@ -31,8 +32,8 @@ public class RedisConfig {
 	public RedisTemplate redisTemplate(){
 		RedisTemplate redisTemplate = new RedisTemplate();
 		redisTemplate.setConnectionFactory(redisConnectionFactory());
-		Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
-		redisTemplate.setDefaultSerializer(jackson2JsonRedisSerializer);
+		GenericJackson2JsonRedisSerializer genericJackson2JsonRedisSerializer = new GenericJackson2JsonRedisSerializer();
+		redisTemplate.setDefaultSerializer(genericJackson2JsonRedisSerializer);
 		return redisTemplate;
 	}
 

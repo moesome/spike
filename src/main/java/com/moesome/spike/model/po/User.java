@@ -1,11 +1,13 @@
 package com.moesome.spike.model.po;
 
-import java.io.Serializable;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
 public class User {
+    @JsonIgnore
     private Integer id;
 
     private String username;
@@ -13,6 +15,7 @@ public class User {
     /**
     * 两次 md5 第一次在客户端（防劫持），第二次在服务器（防数据泄露后被彩虹表破解）
     */
+    @JsonIgnore
     private String password;
 
     private String nickname;
@@ -25,6 +28,7 @@ public class User {
     /**
     * 上次修改时间
     */
+    @JsonIgnore
     private Date updatedAt;
 
     private String email;

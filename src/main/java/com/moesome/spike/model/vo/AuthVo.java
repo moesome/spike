@@ -6,7 +6,7 @@ import org.hibernate.validator.constraints.Length;
 import javax.validation.constraints.NotNull;
 
 @Data
-public class LoginVo {
+public class AuthVo {
 	@NotNull
 	private String username;
 
