@@ -18,7 +18,7 @@ public class SpringMVCConfig implements WebMvcConfigurer {
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/**")
-				.allowedOrigins("http://moesome.com")
+				.allowedOrigins("http://spike.moesome.com")
 				.allowedMethods("POST", "GET", "PUT", "PATCH","OPTIONS", "DELETE")
 				.maxAge(3600)
 				.allowCredentials(true);

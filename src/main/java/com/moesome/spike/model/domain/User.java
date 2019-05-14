@@ -1,7 +1,8 @@
-package com.moesome.spike.model.po;
+package com.moesome.spike.model.domain;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
@@ -23,12 +24,14 @@ public class User {
     /**
     * 创建时间
     */
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
     private Date createdAt;
 
     /**
     * 上次修改时间
     */
     @JsonIgnore
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
     private Date updatedAt;
 
     private String email;

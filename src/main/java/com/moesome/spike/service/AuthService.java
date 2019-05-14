@@ -4,7 +4,7 @@ import com.moesome.spike.config.RedisConfig;
 import com.moesome.spike.exception.message.ErrorCode;
 import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.UserMapper;
-import com.moesome.spike.model.po.User;
+import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.vo.AuthResult;
 import com.moesome.spike.model.vo.AuthVo;
 import com.moesome.spike.util.EncryptUtil;

@@ -1,9 +1,8 @@
 package com.moesome.spike.model.vo;
 
-import com.fasterxml.jackson.annotation.JsonValue;
 import com.moesome.spike.exception.message.Code;
 import com.moesome.spike.exception.message.ErrorCode;
-import com.moesome.spike.model.po.User;
+import com.moesome.spike.model.domain.User;
 import lombok.Data;
 
 @Data

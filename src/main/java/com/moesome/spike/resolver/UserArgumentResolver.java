@@ -1,6 +1,6 @@
 package com.moesome.spike.resolver;
 
-import com.moesome.spike.model.po.User;
+import com.moesome.spike.model.domain.User;
 import com.moesome.spike.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
