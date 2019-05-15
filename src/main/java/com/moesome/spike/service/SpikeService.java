@@ -1,5 +1,6 @@
 package com.moesome.spike.service;
 
+import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.vo.SpikeResult;
@@ -25,7 +26,20 @@ public class SpikeService {
 		}
 		List<Spike> spikeList = spikeMapper.selectByPagination(order, (page - 1) * 10, 10);
 		int count = spikeMapper.count();
-		System.out.println(count);
-		return new SpikeResult(spikeList, count);
+		return new SpikeResult(SuccessCode.OK,spikeList, count);
 	}
+
+	/**
+	 * 根据 id 查秒杀项目
+	 * @param spickId
+	 * @return
+	 */
+	public Spike getSpikeById(Long spickId){
+		return spikeMapper.selectByPrimaryKey(spickId);
+	}
+
+	public boolean decrementStock(Long spickId){
+		return spikeMapper.decrementStockById(spickId) > 0;
+	}
+
 }

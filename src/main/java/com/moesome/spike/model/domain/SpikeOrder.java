@@ -1,10 +1,13 @@
 package com.moesome.spike.model.domain;
 
 import java.util.Date;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-public class SpikeOrder {
+@AllArgsConstructor
+public class SpikeOrder implements Order{
     private Long id;
 
     private Integer userId;

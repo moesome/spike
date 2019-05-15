@@ -3,6 +3,7 @@ package com.moesome.spike.config;
 import com.moesome.spike.resolver.UserArgumentResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import java.util.List;
 
 @Configuration
+@EnableTransactionManagement
 public class SpringMVCConfig implements WebMvcConfigurer {
 	@Autowired
 	UserArgumentResolver userArgumentResolver;

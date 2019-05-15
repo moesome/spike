@@ -112,4 +112,9 @@
   <select id="count" resultType="int">
         select count(*) from spike
   </select>
+  <update id="decrementStockById">
+    update spike set stock = stock - 1 where id = #{id,jdbcType=BIGINT} and stock > 0;
+  </update>
+
+
 </mapper>

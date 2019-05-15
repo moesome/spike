@@ -1,7 +1,6 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.config.RedisConfig;
-import com.moesome.spike.exception.message.ErrorCode;
 import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.UserMapper;
 import com.moesome.spike.model.domain.User;
@@ -30,11 +29,11 @@ public class AuthService {
 		String client = EncryptUtil.md5(authVo.getPassword());
 		User user = userMapper.selectByUsername(authVo.getUsername());
 		if (user == null){
-			return new AuthResult(ErrorCode.USERNAME_OR_PASSWORD_ERR);
+			return AuthResult.USERNAME_OR_PASSWORD_ERR;
 		}
 		String db = user.getPassword();
 		if (!client.equals(db)){
-			return new AuthResult(ErrorCode.USERNAME_OR_PASSWORD_ERR);
+			return AuthResult.USERNAME_OR_PASSWORD_ERR;
 		}
 		// 存入 redis
 		String sessionId = saveUserAndGenerateSessionId(user);

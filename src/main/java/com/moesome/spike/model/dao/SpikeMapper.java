@@ -7,6 +7,8 @@ import java.util.List;
 public interface SpikeMapper {
     List<Spike> selectByPagination(String order,int start,int count);
 
+    int decrementStockById(Long id);
+
     int count();
 
     int deleteByPrimaryKey(Long id);

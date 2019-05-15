@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 public class User {
-    @JsonIgnore
+
     private Integer id;
 
     private String username;
