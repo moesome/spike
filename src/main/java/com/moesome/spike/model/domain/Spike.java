@@ -7,32 +7,32 @@ import lombok.Data;
 
 @Data
 public class Spike {
+	private Long id;
 
-    private Long id;
+	private String name;
 
-    private String name;
+	/**
+	 * 创建者
+	 */
+	private Long userId;
 
-    private String detail;
+	private String detail;
 
-    /**
-     * -1 表示无限
-     */
-    private Integer stock;
-    /**
-    * 起始时间
-    */
+	/**
+	 * 起始时间
+	 */
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
-    private Date startAt;
+	private Date startAt;
 
-    /**
-    * 结束时间
-    */
+	/**
+	 * 结束时间
+	 */
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
-    private Date endAt;
+	private Date endAt;
 
+	private Integer stock;
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
-    private Date updatedAt;
-
+	private Date createdAt;
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
-    private Date createdAt;
+	private Date updatedAt;
 }

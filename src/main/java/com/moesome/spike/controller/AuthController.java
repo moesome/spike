@@ -1,5 +1,6 @@
 package com.moesome.spike.controller;
 
+import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.vo.AuthResult;
 import com.moesome.spike.model.vo.AuthVo;
 import com.moesome.spike.service.AuthService;
@@ -20,7 +21,7 @@ public class AuthController {
 	 * @param sessionId
 	 * @return
 	 */
-	@GetMapping("/check")
+	@GetMapping("check")
 	public AuthResult check(@CookieValue(required = false) String sessionId,HttpServletResponse httpServletResponse){
 		return authService.check(sessionId, httpServletResponse);
 	}
@@ -31,8 +32,13 @@ public class AuthController {
 	 * @param httpServletResponse
 	 * @return
 	 */
-	@PostMapping("/login")
+	@PostMapping("login")
 	public AuthResult login(@Validated @RequestBody AuthVo authVo, HttpServletResponse httpServletResponse){
 		return authService.login(authVo,httpServletResponse);
+	}
+
+	@PostMapping("logout")
+	public AuthResult logout(@CookieValue(required = false) String sessionId, HttpServletResponse httpServletResponse){
+		return authService.logout(sessionId,httpServletResponse);
 	}
 }

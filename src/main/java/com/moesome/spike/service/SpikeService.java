@@ -5,6 +5,7 @@ import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.vo.SpikeResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -13,7 +14,10 @@ import java.util.List;
 @Service
 public class SpikeService {
 	@Autowired
-	SpikeMapper spikeMapper;
+	private SpikeMapper spikeMapper;
+
+	@Autowired
+	private RedisTemplate<String,Object> redisTemplate;
 
 	public SpikeResult index(String order, int page){
 		if (StringUtils.isEmpty(order) || order.equals("ascend")){
@@ -31,15 +35,29 @@ public class SpikeService {
 
 	/**
 	 * 根据 id 查秒杀项目
-	 * @param spickId
+	 * @param spikeId
 	 * @return
 	 */
-	public Spike getSpikeById(Long spickId){
-		return spikeMapper.selectByPrimaryKey(spickId);
+	public Spike getSpikeById(Long spikeId){
+		return spikeMapper.selectByPrimaryKey(spikeId);
 	}
 
-	public boolean decrementStock(Long spickId){
-		return spikeMapper.decrementStockById(spickId) > 0;
+	public void decrementStock(Long spikeId){
+		spikeMapper.decrementStockById(spikeId);
 	}
 
+	/**
+	 * 优化秒杀，将秒杀要用到的一些参数写入缓存，如果这些值能通过验证再写入数据库
+	 */
+	public void init() {
+		List<Spike> spikes = spikeMapper.selectAll();
+		for (Spike spike : spikes){
+			redisTemplate.opsForHash().put("spike"+spike.getId(),"stock",spike.getStock());
+			redisTemplate.opsForHash().put("spike"+spike.getId(),"startAt",spike.getStartAt());
+			redisTemplate.opsForHash().put("spike"+spike.getId(),"endAt",spike.getEndAt());
+//			System.out.println("1:"+redisTemplate.opsForHash().get("spike"+spike.getId(),"stock"));
+//			System.out.println("2:"+redisTemplate.opsForHash().get("spike"+spike.getId(),"startAt"));
+//			System.out.println("3:"+redisTemplate.opsForHash().get("spike"+spike.getId(),"endAt"));
+		}
+	}
 }

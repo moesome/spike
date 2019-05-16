@@ -28,10 +28,9 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 	@Override
 	public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
 		HttpServletRequest httpServletRequest = webRequest.getNativeRequest(HttpServletRequest.class);
-		HttpServletResponse httpServletResponse = webRequest.getNativeRequest(HttpServletResponse.class);
 		String paramSessionId = httpServletRequest.getParameter("sessionId");
 		String cookieSessionId = getCookieValue(httpServletRequest,"sessionId");
-		String sessionId = null;
+		String sessionId;
 		if (!StringUtils.isEmpty(paramSessionId)){
 			sessionId = paramSessionId;
 		}else if (!StringUtils.isEmpty(cookieSessionId)){

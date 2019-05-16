@@ -50,7 +50,7 @@ public class AuthService {
 		if (user == null){
 			return AuthResult.AUTU_FAILED;
 		}
-		refreshMsgInRedis(sessionId);
+		refreshMsgInRedis(sessionId,RedisConfig.EXPIRE_SECOND);
 		setCookie(sessionId,httpServletResponse);
 		return new AuthResult(SuccessCode.OK,user);
 	}
@@ -86,8 +86,17 @@ public class AuthService {
 	 * 刷新 redis session 的缓存存在时间
 	 * @param sessionId
 	 */
-	private void refreshMsgInRedis(String sessionId){
-		redisTemplate.expire(sessionId,RedisConfig.EXPIRE_SECOND, TimeUnit.SECONDS);
+	private void refreshMsgInRedis(String sessionId,int time){
+		redisTemplate.expire(sessionId,time, TimeUnit.SECONDS);
 	}
 
+	public AuthResult logout(String sessionId, HttpServletResponse httpServletResponse) {
+		if (!StringUtils.isEmpty(sessionId)){
+			setCookie("",httpServletResponse);
+			refreshMsgInRedis(sessionId,0);
+			return new AuthResult(SuccessCode.OK);
+		}else{
+			return AuthResult.AUTU_FAILED;
+		}
+	}
 }
