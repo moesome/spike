@@ -1,11 +1,15 @@
 package com.moesome.spike.controller;
 
+import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.vo.OrderResult;
+import com.moesome.spike.model.vo.SpikeOrderVo;
+import com.moesome.spike.service.MQSender;
 import com.moesome.spike.service.SpikeOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.concurrent.BrokenBarrierException;
@@ -20,4 +24,8 @@ public class SpikeOrderController {
 	public OrderResult createOrder(User user, @PathVariable Long spikeId){
 		return spikeOrderService.createOrder(user,spikeId);
 	}
+
+	@Autowired
+	private MQSender mqSender;
+	
 }

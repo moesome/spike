@@ -42,8 +42,8 @@ public class SpikeService {
 		return spikeMapper.selectByPrimaryKey(spikeId);
 	}
 
-	public void decrementStock(Long spikeId){
-		spikeMapper.decrementStockById(spikeId);
+	public boolean decrementStock(Long spikeId){
+		return spikeMapper.decrementStockById(spikeId) > 0;
 	}
 
 	/**

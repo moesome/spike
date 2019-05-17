@@ -1,26 +1,26 @@
 package com.moesome.spike.service;
 
-import com.moesome.spike.exception.message.ErrorCode;
+import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import com.moesome.spike.exception.message.SuccessCode;
-import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.dao.SpikeOrderMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.vo.OrderResult;
-import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+import com.moesome.spike.model.vo.SpikeOrderVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.xml.crypto.Data;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
+
 
 @Service
 public class SpikeOrderService {
@@ -35,6 +35,11 @@ public class SpikeOrderService {
 	@Autowired
 	private RedisTemplate<String,Integer> redisTemplate;
 
+	@Autowired
+	private MQSender mqSender;
+
+	@Autowired
+	private TransactionTemplate transactionTemplate;
 	/*
 	以下为并发可能出现错误的代码：
 	发生原因为启动了事务，可能多个事务在进入锁之前开启，查询时使用的视图可能没有及时被更新
@@ -81,6 +86,7 @@ public class SpikeOrderService {
 		// 检查是否登录
 		if (user == null)
 			return OrderResult.UNAUTHORIZED;
+		// 查库存到减订单加锁
 		synchronized (lock) {
 			// 查库存
 			Integer stock = (Integer)redisTemplate.opsForHash().get("spike" + spikeId, "stock");
@@ -115,21 +121,66 @@ public class SpikeOrderService {
 				//减缓存库存
 				redisTemplate.opsForHash().increment("spike" + spikeId,"stock",-1);
 			}
-			// 使用了用户 id 和秒杀项目 id 的唯一索引，无需校验是否已经抢过，直接下订单，下单失败则说明已经抢过
-			/**
-			 * 此时为直接提交事务，之后修改为提交至队列
-			 */
-			orderAndDecrementStock(user,spikeId);
 		}
+		// 使用了用户 id 和秒杀项目 id 的唯一索引，无需校验是否已经抢过，直接下订单，下单失败则说明已经抢过
+		/**
+		 * 由于预减库存工作已经在 redis 里完成，这一步可以移出同步代码块
+		 * 此时为直接提交事务，之后修改为提交至队列
+		 */
+		OrderAndDecrementStock(user, spikeId);
 		return new OrderResult(SuccessCode.OK);
 	}
 
+	/*
+	优化为加入队列后执行操作
 	@Transactional
-	void orderAndDecrementStock(User user, Long spikeId){
+	boolean OrderAndDecrementStock(User user, Long spikeId){
 		// 下订单
 		SpikeOrder spikeOrder = new SpikeOrder(null, user.getId(), spikeId, new Date(), (byte) 1);
 		spikeOrderMapper.insert(spikeOrder);
 		// 减库存
 		spikeService.decrementStock(spikeId);
+		return true;
+	}*/
+
+	void OrderAndDecrementStock(User user, Long spikeId){
+		mqSender.sendToSpikeTopic(new SpikeOrderVo(user.getId(),spikeId));
+	}
+
+	// 开启 retry 后，异常会被捕获并用于重试，无法被声明式事务操作捕获，此处手动管理事务
+	//	@Transactional
+	@Retryable(value= {Exception.class},maxAttempts = 3)
+	void ResolveOrder(SpikeOrderVo spikeOrderVo){
+		/**
+		 *
+		 *
+		 *
+		 *
+		 * ===========使用声明式事务管理来解决 retry 和 transaction 冲突问题
+		 *
+		 *
+		 */
+
+		System.out.println("减库存");
+		// 减库存
+		boolean decrementStock = spikeService.decrementStock(spikeOrderVo.getSpike_id());
+		if (!decrementStock){
+			System.out.println("减库存失败");
+			return;
+		}
+		// 下订单
+		SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUser_id(), spikeOrderVo.getSpike_id(), new Date(), (byte) 1);
+		insert(spikeOrder);
+		System.out.println("下订单");
+	}
+	@Recover
+	void ResolverOrderFailed(Exception e,SpikeOrderVo spikeOrderVo){
+		System.out.println("=======================fail");
+	}
+
+
+
+	public void insert(SpikeOrder spikeOrder) {
+		spikeOrderMapper.insert(spikeOrder);
 	}
 }
