@@ -1,7 +1,8 @@
-package com.moesome.spike.model.vo;
+package com.moesome.spike.model.vo.result;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.moesome.spike.exception.message.Code;
+import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.domain.Spike;
 import lombok.Data;
 
@@ -13,6 +14,7 @@ public class SpikeResult extends Result<List<Spike>>{
 	int count;
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	Date now;
+	public static final SpikeResult OK_WITHOUT_BODY = new SpikeResult(SuccessCode.OK);
 
 	public SpikeResult(Code code) {
 		super(code);

@@ -6,11 +6,14 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
+import javax.validation.constraints.*;
+
 @Data
 public class User {
 
-    private Integer id;
+    private Long id;
 
+    @NotNull
     private String username;
 
     /**
@@ -19,6 +22,7 @@ public class User {
     @JsonIgnore
     private String password;
 
+    @NotNull
     private String nickname;
 
     /**
@@ -34,7 +38,9 @@ public class User {
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
     private Date updatedAt;
 
+    @NotNull
     private String email;
 
+    @NotNull
     private String phone;
 }

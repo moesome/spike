@@ -1,11 +1,15 @@
-package com.moesome.spike.model.vo;
+package com.moesome.spike.model.vo.receive;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotNull;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class AuthVo {
 	@NotNull
 	private String username;

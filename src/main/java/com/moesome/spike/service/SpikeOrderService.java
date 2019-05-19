@@ -1,25 +1,27 @@
 package com.moesome.spike.service;
 
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.SpikeOrderMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.vo.OrderResult;
-import com.moesome.spike.model.vo.SpikeOrderVo;
+import com.moesome.spike.model.vo.receive.SpikeOrderAndSpikeVo;
+import com.moesome.spike.model.vo.receive.SpikeOrderVo;
+import com.moesome.spike.model.vo.result.AuthResult;
+import com.moesome.spike.model.vo.result.OrderResult;
+import com.moesome.spike.model.vo.result.Result;
+import com.moesome.spike.model.vo.result.SpikeOrderResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Date;
+import java.util.List;
 
 
 @Service
@@ -33,13 +35,25 @@ public class SpikeOrderService {
 	private SpikeOrderMapper spikeOrderMapper;
 
 	@Autowired
-	private RedisTemplate<String,Integer> redisTemplate;
+	private RedisTemplate<String, Integer> redisTemplate;
+
+	@Autowired
+	private RedisTemplate<String, SpikeOrder> redisTemplateForSpikeOrder;
+
+	// 校验用户是否已经发出了请求，防止多次请求带来的阻塞
+	@Autowired
+	private RedisTemplate<String, SpikeOrderVo> redisTemplateForSpikeOrderVo;
+
+	@Autowired
+	private RedisTemplate<String, Object> redisTemplateForSpike;
 
 	@Autowired
 	private MQSender mqSender;
 
 	@Autowired
 	private TransactionTemplate transactionTemplate;
+
+	public static final SpikeOrder ORDER_FAILED = new SpikeOrder(-1L,null,null,null,null);
 	/*
 	以下为并发可能出现错误的代码：
 	发生原因为启动了事务，可能多个事务在进入锁之前开启，查询时使用的视图可能没有及时被更新
@@ -79,55 +93,57 @@ public class SpikeOrderService {
 	 * @param spikeId
 	 * @return
 	 */
-	public OrderResult createOrder(User user,Long spikeId) {
+	public Result store(User user,Long spikeId) {
 		// 检查 id 是否传过来了
 		if (spikeId == null)
 			return OrderResult.REQUEST_ERR;
 		// 检查是否登录
 		if (user == null)
-			return OrderResult.UNAUTHORIZED;
-		// 查库存到减订单加锁
-		synchronized (lock) {
-			// 查库存
-			Integer stock = (Integer)redisTemplate.opsForHash().get("spike" + spikeId, "stock");
-			Date startAt = (Date)redisTemplate.opsForHash().get("spike" + spikeId, "startAt");
-			Date endAt = (Date)redisTemplate.opsForHash().get("spike" + spikeId, "endAt");
-			if (stock == null||startAt == null||endAt == null){
-				// redis 查出的结果无效则还是在数据库中取
-				Spike spike = spikeService.getSpikeById(spikeId);
-				stock = spike.getStock();
-				startAt = spike.getStartAt();
-				endAt = spike.getEndAt();
-				System.out.println("查数据库");
-			}else{
-				System.out.println("查缓存");
-			}
-			System.out.println(stock);
-			System.out.println(startAt);
-			System.out.println(endAt);
-
-			Date now = new Date();
-			// 在开始之前或结束之后则直接返回错误码
-			if (now.compareTo(startAt) < 0 ){
-				return OrderResult.TIME_LIMIT_NOT_ARRIVED;
-			}
-			if (now.compareTo(endAt) > 0){
-				return OrderResult.TIME_LIMIT_EXCEED;
-			}
-			// 判断是否大于 0
-			if (stock <= 0) {
-				return OrderResult.LIMIT_EXCEED;
-			}else{
-				//减缓存库存
-				redisTemplate.opsForHash().increment("spike" + spikeId,"stock",-1);
-			}
+			return AuthResult.UNAUTHORIZED;
+		// 阻止多次重复下单
+		SpikeOrderVo spikeOrderVo = new SpikeOrderVo(user.getId(),spikeId);
+		SpikeOrderVo spikeOrderVoInRedis = redisTemplateForSpikeOrderVo.opsForValue().get(generateSpikeOrderVoKey(spikeOrderVo));
+		if (spikeOrderVoInRedis != null){
+			// 已经下过单了
+			return OrderResult.REPEATED_REQUEST;
+		}else{
+			redisTemplateForSpikeOrderVo.opsForValue().set(generateSpikeOrderVoKey(spikeOrderVo),spikeOrderVo);
 		}
+		// 查库存到减订单加锁，已经用预减缓存策略优化掉了该锁
+		// synchronized (lock) {
+		// 查库存优化为直接对库存进行原子自增（减一），如果减少后大于 0 则说明还能下单
+		// 减缓存库存
+		Long stockRemain = redisTemplate.opsForHash().increment("spike" + spikeId, "stock", -1);
+		if (stockRemain < 0){
+			return OrderResult.LIMIT_EXCEED;
+		}
+		Date startAt = (Date)redisTemplateForSpike.opsForHash().get("spike" + spikeId, "startAt");
+		Date endAt = (Date)redisTemplateForSpike.opsForHash().get("spike" + spikeId, "endAt");
+		if (startAt == null||endAt == null){
+			// redis 查出的结果无效则还是在数据库中取
+			Spike spike = spikeService.getSpikeById(spikeId);
+			startAt = spike.getStartAt();
+			endAt = spike.getEndAt();
+			System.out.println("查数据库");
+		}else{
+			System.out.println("查缓存");
+		}
+		System.out.println(startAt);
+		System.out.println(endAt);
+
+		Date now = new Date();
+		// 在开始之前或结束之后则直接返回错误码
+		if (now.compareTo(startAt) < 0 ){
+			return OrderResult.TIME_LIMIT_NOT_ARRIVED;
+		}
+		if (now.compareTo(endAt) > 0){
+			return OrderResult.TIME_LIMIT_EXCEED;
+		}
+
+		// }
 		// 使用了用户 id 和秒杀项目 id 的唯一索引，无需校验是否已经抢过，直接下订单，下单失败则说明已经抢过
-		/**
-		 * 由于预减库存工作已经在 redis 里完成，这一步可以移出同步代码块
-		 * 此时为直接提交事务，之后修改为提交至队列
-		 */
-		OrderAndDecrementStock(user, spikeId);
+
+		orderAndDecrementStock(user, spikeId);
 		return new OrderResult(SuccessCode.OK);
 	}
 
@@ -143,44 +159,99 @@ public class SpikeOrderService {
 		return true;
 	}*/
 
-	void OrderAndDecrementStock(User user, Long spikeId){
+	/**
+	 * 发送将要生成的订单关键信息到队列
+	 * @param user
+	 * @param spikeId
+	 */
+	private void orderAndDecrementStock(User user, Long spikeId){
 		mqSender.sendToSpikeTopic(new SpikeOrderVo(user.getId(),spikeId));
 	}
 
 	// 开启 retry 后，异常会被捕获并用于重试，无法被声明式事务操作捕获，此处手动管理事务
 	//	@Transactional
-	@Retryable(value= {Exception.class},maxAttempts = 3)
-	void ResolveOrder(SpikeOrderVo spikeOrderVo){
-		/**
-		 *
-		 *
-		 *
-		 *
-		 * ===========使用声明式事务管理来解决 retry 和 transaction 冲突问题
-		 *
-		 *
-		 */
 
-		System.out.println("减库存");
-		// 减库存
-		boolean decrementStock = spikeService.decrementStock(spikeOrderVo.getSpike_id());
-		if (!decrementStock){
-			System.out.println("减库存失败");
-			return;
-		}
-		// 下订单
-		SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUser_id(), spikeOrderVo.getSpike_id(), new Date(), (byte) 1);
-		insert(spikeOrder);
-		System.out.println("下订单");
+	/**
+	 * 处理从队列收到的订单信息
+	 * 供 rabbitmq 的 received 调用
+	 * @param spikeOrderVo
+	 */
+	@Retryable(value= {Exception.class},maxAttempts = 2)
+	void resolveOrder(SpikeOrderVo spikeOrderVo){
+		// 使用声明式事务管理来解决 retry 和 transaction 冲突问题
+		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+			@Override
+			protected void doInTransactionWithoutResult(TransactionStatus status) {
+				try{
+					System.out.println("减库存");
+					// 减库存
+					boolean decrementStock = spikeService.decrementStock(spikeOrderVo.getSpikeId());
+					if (!decrementStock){
+						System.out.println("减库存失败");
+						return;
+					}
+					// 下订单
+					SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), new Date(), (byte) 1);
+					insert(spikeOrder);
+					System.out.println("下订单");
+					// 订单加入缓存
+					// spikeOrder 主键已由 mybatis 在插入成功后自动注入
+					redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),spikeOrder);
+				}catch (Exception e){
+					System.out.println("发生异常，进行回滚");
+					status.setRollbackOnly();
+					// 抛出错误让重试框架捕获，错误两次则会由 recover 方法进行处理
+					throw e;
+				}
+			}
+		});
 	}
 	@Recover
-	void ResolverOrderFailed(Exception e,SpikeOrderVo spikeOrderVo){
-		System.out.println("=======================fail");
+	void resolverOrderFailed(Exception e,SpikeOrderVo spikeOrderVo){
+		System.out.println("重试失败，交易未成功！");
+		// 未成功交易应该给缓存中加一
+		SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), null, (byte) 1);
+		redisTemplate.opsForHash().increment("spike" + spikeOrderVo.getSpikeId(), "stock", 1);
+		redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),ORDER_FAILED);
 	}
 
+	private static String generateSpikeOrderKey(SpikeOrder spikeOrder){
+		return "spikeOrder-userId:"+spikeOrder.getUserId()+"-spikeId:"+spikeOrder.getSpikeId();
+	}
 
+	private static String generateSpikeOrderVoKey(SpikeOrderVo spikeOrderVo){
+		return "spikeOrderVo-userId:"+spikeOrderVo.getUserId()+"-spikeId:"+spikeOrderVo.getSpikeId();
+	}
 
-	public void insert(SpikeOrder spikeOrder) {
+	private void insert(SpikeOrder spikeOrder) {
 		spikeOrderMapper.insert(spikeOrder);
+	}
+
+	public Result check(User user, Long spikeId) {
+		if (user == null)
+			return AuthResult.UNAUTHORIZED;
+		SpikeOrder spikeOrder = new SpikeOrder(null, user.getId(), spikeId, null, (byte) 1);
+		spikeOrder = redisTemplateForSpikeOrder.opsForValue().get(generateSpikeOrderKey(spikeOrder));
+		if (spikeOrder == null){
+			// 请求还在队列中
+			return OrderResult.IN_QUEUE;
+		}else{
+			if (spikeOrder.getId() == -1){
+				// 请求失败
+				return OrderResult.FAILED;
+			}else{
+				return new OrderResult(SuccessCode.OK,spikeOrder);
+			}
+		}
+	}
+
+	public Result index(User user, String order, int page) {
+		if (user == null)
+			return AuthResult.UNAUTHORIZED;
+		int p = CommonService.pageFormat(page);
+		String o = CommonService.orderFormat(order);
+		List<SpikeOrderAndSpikeVo> spikeOrderAndSpikeVos = spikeOrderMapper.selectByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
+		int count = spikeOrderMapper.countByUserId(user.getId());
+		return new SpikeOrderResult(SuccessCode.OK,spikeOrderAndSpikeVos,count);
 	}
 }

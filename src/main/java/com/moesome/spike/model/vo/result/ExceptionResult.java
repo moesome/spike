@@ -1,4 +1,4 @@
-package com.moesome.spike.model.vo;
+package com.moesome.spike.model.vo.result;
 
 import com.moesome.spike.exception.message.Code;
 import lombok.Data;

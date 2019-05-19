@@ -1,4 +1,4 @@
-package com.moesome.spike.model.vo;
+package com.moesome.spike.model.vo.result;
 
 import com.moesome.spike.exception.message.Code;
 import com.moesome.spike.exception.message.ErrorCode;
@@ -9,6 +9,7 @@ public class AuthResult extends Result<User> {
 
 	public static final AuthResult AUTU_FAILED = new AuthResult(ErrorCode.UNAUTHORIZED,null);
 	public static final AuthResult USERNAME_OR_PASSWORD_ERR = new AuthResult(ErrorCode.USERNAME_OR_PASSWORD_ERR);
+	public static final AuthResult UNAUTHORIZED = new AuthResult(ErrorCode.UNAUTHORIZED);
 
 
 	public AuthResult(Code code) {

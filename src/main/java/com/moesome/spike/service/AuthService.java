@@ -4,8 +4,9 @@ import com.moesome.spike.config.RedisConfig;
 import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.UserMapper;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.vo.AuthResult;
-import com.moesome.spike.model.vo.AuthVo;
+import com.moesome.spike.model.vo.result.AuthResult;
+import com.moesome.spike.model.vo.receive.AuthVo;
+import com.moesome.spike.model.vo.result.Result;
 import com.moesome.spike.util.EncryptUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -25,7 +26,7 @@ public class AuthService {
 	@Autowired
 	private RedisTemplate<String,User> redisTemplate;
 
-	public AuthResult login(AuthVo authVo, HttpServletResponse httpServletResponse){
+	public Result login(AuthVo authVo, HttpServletResponse httpServletResponse){
 		String client = EncryptUtil.md5(authVo.getPassword());
 		User user = userMapper.selectByUsername(authVo.getUsername());
 		if (user == null){
@@ -42,7 +43,7 @@ public class AuthService {
 		return new AuthResult(SuccessCode.OK,user);
 	}
 
-	public AuthResult check(String sessionId, HttpServletResponse httpServletResponse) {
+	public Result check(String sessionId, HttpServletResponse httpServletResponse) {
 		if (StringUtils.isEmpty(sessionId)){
 			return AuthResult.AUTU_FAILED;
 		}
@@ -76,6 +77,8 @@ public class AuthService {
 	}
 
 	private void setCookie(String sessionId, HttpServletResponse httpServletResponse){
+		if (httpServletResponse == null)
+			return;
 		Cookie cookie = new Cookie("sessionId",sessionId);
 		cookie.setMaxAge(RedisConfig.EXPIRE_SECOND);
 		cookie.setPath("/");
@@ -90,7 +93,7 @@ public class AuthService {
 		redisTemplate.expire(sessionId,time, TimeUnit.SECONDS);
 	}
 
-	public AuthResult logout(String sessionId, HttpServletResponse httpServletResponse) {
+	public Result logout(String sessionId, HttpServletResponse httpServletResponse) {
 		if (!StringUtils.isEmpty(sessionId)){
 			setCookie("",httpServletResponse);
 			refreshMsgInRedis(sessionId,0);

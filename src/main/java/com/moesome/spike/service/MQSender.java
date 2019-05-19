@@ -1,12 +1,8 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.config.MQConfig;
-import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.vo.SpikeOrderVo;
+import com.moesome.spike.model.vo.receive.SpikeOrderVo;
 import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

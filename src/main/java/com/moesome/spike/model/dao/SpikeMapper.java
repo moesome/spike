@@ -7,9 +7,13 @@ public interface SpikeMapper {
 
     List<Spike> selectByPagination(String order,int start,int count);
 
+    List<Spike> selectByUserIdPagination(Long id,String order,int start,int count);
+
     int decrementStockById(Long id);
 
     int count();
+
+    int countByUserId();
 
     int deleteByPrimaryKey(Long id);
 
