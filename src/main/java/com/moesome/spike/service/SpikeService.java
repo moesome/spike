@@ -4,10 +4,11 @@ import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.vo.receive.SpikeVo;
-import com.moesome.spike.model.vo.result.AuthResult;
-import com.moesome.spike.model.vo.result.Result;
-import com.moesome.spike.model.vo.result.SpikeResult;
+import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
+import com.moesome.spike.model.pojo.vo.SpikeVo;
+import com.moesome.spike.model.pojo.result.AuthResult;
+import com.moesome.spike.model.pojo.result.Result;
+import com.moesome.spike.model.pojo.result.SpikeResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -79,13 +80,13 @@ public class SpikeService {
 		spike.setCreatedAt(now);
 		spike.setUpdatedAt(now);
 		spike.setUserId(user.getId());
-		transforSpikeVoMessageToSpike(spikeVo,spike);
+		transformSpikeVoMessageToSpike(spikeVo,spike);
 		spikeMapper.insertSelective(spike);
 		saveSpikeToRedis(spike);
 		return SpikeResult.OK_WITHOUT_BODY;
 	}
 
-	public Result get(User user,Long id) {
+	public Result show(User user,Long id) {
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
 		List<Spike> list = new ArrayList<>(1);
@@ -94,7 +95,7 @@ public class SpikeService {
 			list.add(spike);
 			return new SpikeResult(SuccessCode.OK,list,1);
 		}else{
-			return AuthResult.AUTU_FAILED;
+			return AuthResult.AUTH_FAILED;
 		}
 	}
 
@@ -109,20 +110,25 @@ public class SpikeService {
 			Spike spike = new Spike();
 			spike.setId(id);
 			spike.setUpdatedAt(new Date());
-			transforSpikeVoMessageToSpike(spikeVo,spike);
+			transformSpikeVoMessageToSpike(spikeVo,spike);
 			spikeMapper.updateByPrimaryKeySelective(spike);
 			saveSpikeToRedis(spike);
 			return SpikeResult.OK_WITHOUT_BODY;
 		}else{
-			return AuthResult.AUTU_FAILED;
+			return AuthResult.AUTH_FAILED;
 		}
 	}
 
-	private void transforSpikeVoMessageToSpike(SpikeVo spikeVo,Spike spike){
+	private void transformSpikeVoMessageToSpike(SpikeVo spikeVo,Spike spike){
 		spike.setName(spikeVo.getName());
 		spike.setDetail(spikeVo.getDetail());
 		spike.setStock(spikeVo.getStock());
 		spike.setStartAt(spikeVo.getStartAt());
 		spike.setEndAt(spikeVo.getEndAt());
 	}
+
+	public SpikeAndUserContactWayVo getSpikeAndUserContactWayBySpikeId(Long spikeId) {
+		return spikeMapper.selectSpikeAndUserContactWayBySpikeId(spikeId);
+	}
+
 }

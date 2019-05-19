@@ -5,12 +5,12 @@ import com.moesome.spike.model.dao.SpikeOrderMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.vo.receive.SpikeOrderAndSpikeVo;
-import com.moesome.spike.model.vo.receive.SpikeOrderVo;
-import com.moesome.spike.model.vo.result.AuthResult;
-import com.moesome.spike.model.vo.result.OrderResult;
-import com.moesome.spike.model.vo.result.Result;
-import com.moesome.spike.model.vo.result.SpikeOrderResult;
+import com.moesome.spike.model.pojo.vo.SpikeOrderAndSpikeVo;
+import com.moesome.spike.model.pojo.vo.SpikeOrderVo;
+import com.moesome.spike.model.pojo.result.AuthResult;
+import com.moesome.spike.model.pojo.result.OrderResult;
+import com.moesome.spike.model.pojo.result.Result;
+import com.moesome.spike.model.pojo.result.SpikeOrderResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.retry.annotation.Recover;
@@ -90,18 +90,15 @@ public class SpikeOrderService {
 	 * 4. 客户端轮询，检查秒杀是否成功
 	 * 注意，以上流程存在缓存不一致问题
 	 * @param user
-	 * @param spikeId
+	 * @param spikeOrderVo
 	 * @return
 	 */
-	public Result store(User user,Long spikeId) {
-		// 检查 id 是否传过来了
-		if (spikeId == null)
-			return OrderResult.REQUEST_ERR;
+	public Result store(User user,SpikeOrderVo spikeOrderVo) {
 		// 检查是否登录
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
+		Long spikeId = spikeOrderVo.getSpikeId();
 		// 阻止多次重复下单
-		SpikeOrderVo spikeOrderVo = new SpikeOrderVo(user.getId(),spikeId);
 		SpikeOrderVo spikeOrderVoInRedis = redisTemplateForSpikeOrderVo.opsForValue().get(generateSpikeOrderVoKey(spikeOrderVo));
 		if (spikeOrderVoInRedis != null){
 			// 已经下过单了
@@ -250,8 +247,16 @@ public class SpikeOrderService {
 			return AuthResult.UNAUTHORIZED;
 		int p = CommonService.pageFormat(page);
 		String o = CommonService.orderFormat(order);
-		List<SpikeOrderAndSpikeVo> spikeOrderAndSpikeVos = spikeOrderMapper.selectByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
+		List<SpikeOrderAndSpikeVo> spikeOrderAndSpikeVos = spikeOrderMapper.selectSpikeOrderAndSpikeVoByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
 		int count = spikeOrderMapper.countByUserId(user.getId());
 		return new SpikeOrderResult(SuccessCode.OK,spikeOrderAndSpikeVos,count);
+	}
+
+	public SpikeOrder selectByPrimaryKey(Long id) {
+		return spikeOrderMapper.selectByPrimaryKey(id);
+	}
+
+	public void updateByPrimaryKeySelective(SpikeOrder spikeOrderToChangeStatus) {
+		spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
 	}
 }

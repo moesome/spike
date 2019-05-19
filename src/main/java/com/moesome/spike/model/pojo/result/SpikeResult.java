@@ -1,4 +1,4 @@
-package com.moesome.spike.model.vo.result;
+package com.moesome.spike.model.pojo.result;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.moesome.spike.exception.message.Code;

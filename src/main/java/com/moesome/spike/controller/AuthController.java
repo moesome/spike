@@ -1,7 +1,7 @@
 package com.moesome.spike.controller;
 
-import com.moesome.spike.model.vo.receive.AuthVo;
-import com.moesome.spike.model.vo.result.Result;
+import com.moesome.spike.model.pojo.vo.AuthVo;
+import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;

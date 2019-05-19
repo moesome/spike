@@ -136,6 +136,21 @@
     <delete id="countByUserId">
         select count(*) from spike where user_id = #{id}
     </delete>
+    <select id="selectSpikeAndUserContactWayBySpikeId"
+            resultType="com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo">
+        select
+            user.email as email,
+            user.phone as phone,
+            spike.*
+        from
+            spike
+        left join
+            user
+        on
+            spike.user_id = user.id
+        where
+            spike.id = #{spikeId,jdbcType=BIGINT}
+    </select>
 
 
 </mapper>

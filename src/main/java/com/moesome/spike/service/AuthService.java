@@ -4,9 +4,9 @@ import com.moesome.spike.config.RedisConfig;
 import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.UserMapper;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.vo.result.AuthResult;
-import com.moesome.spike.model.vo.receive.AuthVo;
-import com.moesome.spike.model.vo.result.Result;
+import com.moesome.spike.model.pojo.result.AuthResult;
+import com.moesome.spike.model.pojo.vo.AuthVo;
+import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.util.EncryptUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -45,11 +45,11 @@ public class AuthService {
 
 	public Result check(String sessionId, HttpServletResponse httpServletResponse) {
 		if (StringUtils.isEmpty(sessionId)){
-			return AuthResult.AUTU_FAILED;
+			return AuthResult.AUTH_FAILED;
 		}
 		User user = getUserBySessionId(sessionId);
 		if (user == null){
-			return AuthResult.AUTU_FAILED;
+			return AuthResult.AUTH_FAILED;
 		}
 		refreshMsgInRedis(sessionId,RedisConfig.EXPIRE_SECOND);
 		setCookie(sessionId,httpServletResponse);
@@ -70,13 +70,13 @@ public class AuthService {
 	 * @param user
 	 * @return
 	 */
-	private String saveUserAndGenerateSessionId(User user){
+	public String saveUserAndGenerateSessionId(User user){
 		String sessionId = UUID.randomUUID().toString().replace("-","");
 		redisTemplate.opsForValue().set(sessionId, user,RedisConfig.EXPIRE_SECOND,TimeUnit.SECONDS);
 		return sessionId;
 	}
 
-	private void setCookie(String sessionId, HttpServletResponse httpServletResponse){
+	public void setCookie(String sessionId, HttpServletResponse httpServletResponse){
 		if (httpServletResponse == null)
 			return;
 		Cookie cookie = new Cookie("sessionId",sessionId);
@@ -89,7 +89,7 @@ public class AuthService {
 	 * 刷新 redis session 的缓存存在时间
 	 * @param sessionId
 	 */
-	private void refreshMsgInRedis(String sessionId,int time){
+	public void refreshMsgInRedis(String sessionId, int time){
 		redisTemplate.expire(sessionId,time, TimeUnit.SECONDS);
 	}
 
@@ -99,7 +99,7 @@ public class AuthService {
 			refreshMsgInRedis(sessionId,0);
 			return new AuthResult(SuccessCode.OK);
 		}else{
-			return AuthResult.AUTU_FAILED;
+			return AuthResult.AUTH_FAILED;
 		}
 	}
 }

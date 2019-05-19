@@ -1,4 +1,4 @@
-package com.moesome.spike.model.vo.receive;
+package com.moesome.spike.model.pojo.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

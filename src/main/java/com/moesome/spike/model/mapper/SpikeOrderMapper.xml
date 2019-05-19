@@ -92,7 +92,7 @@
         `status` = #{status,jdbcType=TINYINT}
         where id = #{id,jdbcType=BIGINT}
     </update>
-    <select id="selectByUserIdPagination" resultType="com.moesome.spike.model.vo.receive.SpikeOrderAndSpikeVo">
+    <select id="selectSpikeOrderAndSpikeVoByUserIdPagination" resultType="com.moesome.spike.model.pojo.vo.SpikeOrderAndSpikeVo">
         select
             spike.id as spikeId,
             spike_order.id as spikeOrderId,

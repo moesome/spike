@@ -1,9 +1,8 @@
 package com.moesome.spike.controller;
 
-import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.vo.receive.SpikeVo;
-import com.moesome.spike.model.vo.result.Result;
+import com.moesome.spike.model.pojo.vo.SpikeVo;
+import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.service.SpikeService;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +25,8 @@ public class SpikeController implements InitializingBean {
 	}
 
 	@GetMapping("spikes/{id}")
-	public Result get(User user,@PathVariable Long id){
-		return spikeService.get(user,id);
+	public Result show(User user,@PathVariable Long id){
+		return spikeService.show(user,id);
 	}
 
 	@PostMapping("spikes")
@@ -39,7 +38,6 @@ public class SpikeController implements InitializingBean {
 	public Result update(User user, @PathVariable Long id,@RequestBody @Validated SpikeVo spikeVo){
 		return spikeService.update(user,spikeVo,id);
 	}
-
 
 	@Override
 	public void afterPropertiesSet() throws Exception {

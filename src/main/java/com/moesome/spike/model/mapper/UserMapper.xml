@@ -16,6 +16,18 @@
         <!--@mbg.generated-->
         id, username, `password`, nickname, created_at, updated_at, email, phone
     </sql>
+    <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        <!--@mbg.generated-->
+        select
+        <include refid="Base_Column_List" />
+        from user
+        where id = #{id,jdbcType=BIGINT}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+        <!--@mbg.generated-->
+        delete from user
+        where id = #{id,jdbcType=BIGINT}
+    </delete>
     <insert id="insert" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.User" useGeneratedKeys="true">
         <!--@mbg.generated-->
         insert into user (username, `password`, nickname,
@@ -75,9 +87,70 @@
             </if>
         </trim>
     </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.moesome.spike.model.domain.User">
+        <!--@mbg.generated-->
+        update user
+        <set>
+            <if test="username != null">
+                username = #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null">
+                `password` = #{password,jdbcType=CHAR},
+            </if>
+            <if test="nickname != null">
+                nickname = #{nickname,jdbcType=VARCHAR},
+            </if>
+            <if test="createdAt != null">
+                created_at = #{createdAt,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updatedAt != null">
+                updated_at = #{updatedAt,jdbcType=TIMESTAMP},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null">
+                phone = #{phone,jdbcType=CHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.moesome.spike.model.domain.User">
+        <!--@mbg.generated-->
+        update user
+        set username = #{username,jdbcType=VARCHAR},
+        `password` = #{password,jdbcType=CHAR},
+        nickname = #{nickname,jdbcType=VARCHAR},
+        created_at = #{createdAt,jdbcType=TIMESTAMP},
+        updated_at = #{updatedAt,jdbcType=TIMESTAMP},
+        email = #{email,jdbcType=VARCHAR},
+        phone = #{phone,jdbcType=CHAR}
+        where id = #{id,jdbcType=BIGINT}
+    </update>
     <select id="selectByUsername" resultMap="BaseResultMap">
         select * from user where username = #{username}
     </select>
+    <select id="selectIdByUsername" resultType="java.lang.Long">
+        select id from user where username = #{username}
+    </select>
+    <select id="selectSendVoByUserId" resultType="com.moesome.spike.model.pojo.vo.SendVo">
+        /**
+        private Long spikeId;
+	    private String name;
+        // spike_order
+        private Long spikeOrderId;
+        private Date createdAt;
+        private Byte status;
+        // user
+        private Long sendToUserId;
+        private String username;
+        private String email;
+        private String phone;
+         */
+         select
+
+
+  </select>
 
 
 </mapper>

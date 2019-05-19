@@ -1,7 +1,7 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.config.MQConfig;
-import com.moesome.spike.model.vo.receive.SpikeOrderVo;
+import com.moesome.spike.model.pojo.vo.SpikeOrderVo;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

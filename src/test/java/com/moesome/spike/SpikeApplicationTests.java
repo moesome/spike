@@ -1,6 +1,6 @@
 package com.moesome.spike;
 
-import com.moesome.spike.model.vo.receive.AuthVo;
+import com.moesome.spike.model.pojo.vo.AuthVo;
 import com.moesome.spike.service.AuthService;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,7 +1,8 @@
-package com.moesome.spike.model.vo.result;
+package com.moesome.spike.model.pojo.result;
 
 import com.moesome.spike.exception.message.Code;
-import com.moesome.spike.model.vo.receive.SpikeOrderAndSpikeVo;
+import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.model.pojo.vo.SpikeOrderAndSpikeVo;
 import lombok.Data;
 
 import java.util.List;
@@ -10,6 +11,8 @@ import java.util.List;
 public class SpikeOrderResult extends Result<List<SpikeOrderAndSpikeVo>>{
 
 	int count;
+
+	public static final SpikeOrderResult NOTICE_SUCCESS = new SpikeOrderResult(SuccessCode.OK);
 
 	public SpikeOrderResult(Code code) {
 		super(code);
