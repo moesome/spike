@@ -11,7 +11,7 @@ import java.util.List;
 
 @Data
 public class SpikeResult extends Result<List<Spike>>{
-	int count;
+	Integer count;
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	Date now;
 	public static final SpikeResult OK_WITHOUT_BODY = new SpikeResult(SuccessCode.OK);
@@ -20,7 +20,7 @@ public class SpikeResult extends Result<List<Spike>>{
 		super(code);
 	}
 
-	public SpikeResult(Code code, List<Spike> spikeList,int count) {
+	public SpikeResult(Code code, List<Spike> spikeList,Integer count) {
 		super(code, spikeList);
 		this.count = count;
 		this.now = new Date();

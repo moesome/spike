@@ -134,23 +134,52 @@
         select id from user where username = #{username}
     </select>
     <select id="selectSendVoByUserId" resultType="com.moesome.spike.model.pojo.vo.SendVo">
-        /**
-        private Long spikeId;
-	    private String name;
-        // spike_order
-        private Long spikeOrderId;
-        private Date createdAt;
-        private Byte status;
-        // user
-        private Long sendToUserId;
-        private String username;
-        private String email;
-        private String phone;
-         */
-         select
-
-
-  </select>
+        select
+            spike.id as spikeId,
+            spike.name as name,
+            spike_order.id as spikeOrderId,
+            spike_order.created_at as createdAt,
+            spike_order.status as status,
+            customer.id as sendToUserId,
+            customer.username as username,
+            customer.email as email,
+            customer.phone as phone
+        from
+            user as provider
+        left join
+            spike
+        on
+            provider.id = spike.user_id
+        left join
+            spike_order
+        on
+            spike.id = spike_order.spike_id
+        left join
+            user as customer
+        on
+            spike_order.user_id = customer.id
+        where
+            provider.id = #{userId}
+        order by
+            spike_order.id ${order} limit #{start},#{count}
+    </select>
+     <!-- 无需消费者信息，不关联消费者表 -->
+    <select id="countSendVoByUserId" resultType="java.lang.Integer">
+        select
+            count(*)
+        from
+            user
+        left join
+            spike
+        on
+            user.id = spike.user_id
+        left join
+            spike_order
+        on
+            spike.id = spike_order.spike_id
+        where
+        user.id = #{userId}
+    </select>
 
 
 </mapper>

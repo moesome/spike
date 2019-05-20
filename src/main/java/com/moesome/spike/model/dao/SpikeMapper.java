@@ -16,9 +16,9 @@ public interface SpikeMapper {
 
     int decrementStockById(Long id);
 
-    int count();
+    Integer count();
 
-    int countByUserId();
+    Integer countByUserId();
 
     int deleteByPrimaryKey(Long id);
 

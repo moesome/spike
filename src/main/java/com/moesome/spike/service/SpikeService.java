@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 @Service
@@ -25,12 +26,56 @@ public class SpikeService {
 	@Autowired
 	private RedisTemplate<String,Object> redisTemplateForSaveSpike;
 
+	@Autowired
+	private RedisTemplate<String,List<Spike>> redisTemplateForFirstPage;
+	/**
+	 * 优化秒杀，将秒杀要用到的一些参数写入缓存，如果这些值能通过验证再写入数据库
+	 */
+	public void init() {
+		List<Spike> spikes = spikeMapper.selectAll();
+		LinkedList<Spike> firstPage = new LinkedList<>();
+		int i = 0;//计数
+		for (Spike spike : spikes){
+			// 缓存秒杀验证数据
+			saveSpikeToRedis(spike);
+			if (i + 10 >= spikes.size()){
+				firstPage.push(spike);
+			}
+			i++;
+		}
+		// 缓存商品第一页
+		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",firstPage);
+		// 缓存总数
+		redisTemplateForSaveSpike.opsForValue().set("count",i);
+	}
+
 	public Result index(String order, int page){
 		String o = CommonService.orderFormat(order);
 		int p = CommonService.pageFormat(page);
-		List<Spike> spikeList = spikeMapper.selectByPagination(o, (p - 1) * 10, 10);
-		int count = spikeMapper.count();
+		List<Spike> spikeList;
+		Integer count;
+		if (o.equals("DESC") && p == 1){
+			// 返回缓存
+			spikeList = redisTemplateForFirstPage.opsForValue().get("firstSpikePage");
+			count = (Integer) redisTemplateForSaveSpike.opsForValue().get("count");
+			// 缓存有效直接返回
+			if (spikeList != null && count != null){
+				// System.out.println("查缓存第一页");
+				return new SpikeResult(SuccessCode.OK,spikeList, count);
+			}
+		}
+		// 缓存无效或没有查询第一页则返回数据库内容
+		spikeList = spikeMapper.selectByPagination(o, (p - 1) * 10, 10);
+		count = spikeMapper.count();
 		return new SpikeResult(SuccessCode.OK,spikeList, count);
+	}
+
+	public void reCacheFirstPage(){
+		// System.out.println("刷新商品第一页缓存");
+		// 缓存商品第一页
+		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",spikeMapper.selectByPagination("DESC", 0, 10));
+		// 缓存总数
+		redisTemplateForSaveSpike.opsForValue().set("count",spikeMapper.count());
 	}
 
 	/**
@@ -46,16 +91,6 @@ public class SpikeService {
 		return spikeMapper.decrementStockById(spikeId) > 0;
 	}
 
-	/**
-	 * 优化秒杀，将秒杀要用到的一些参数写入缓存，如果这些值能通过验证再写入数据库
-	 */
-	public void init() {
-		List<Spike> spikes = spikeMapper.selectAll();
-		for (Spike spike : spikes){
-			saveSpikeToRedis(spike);
-		}
-	}
-
 	private void saveSpikeToRedis(Spike spike){
 		redisTemplateForSaveSpike.opsForHash().put("spike"+spike.getId(),"stock",spike.getStock());
 		redisTemplateForSaveSpike.opsForHash().put("spike"+spike.getId(),"startAt",spike.getStartAt());
@@ -68,7 +103,7 @@ public class SpikeService {
 		String o = CommonService.orderFormat(order);
 		int p = CommonService.pageFormat(page);
 		List<Spike> spikeList = spikeMapper.selectByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
-		int count = spikeMapper.countByUserId();
+		Integer count = spikeMapper.countByUserId();
 		return new SpikeResult(SuccessCode.OK,spikeList, count);
 	}
 
@@ -83,6 +118,7 @@ public class SpikeService {
 		transformSpikeVoMessageToSpike(spikeVo,spike);
 		spikeMapper.insertSelective(spike);
 		saveSpikeToRedis(spike);
+		reCacheFirstPage();
 		return SpikeResult.OK_WITHOUT_BODY;
 	}
 
@@ -113,6 +149,7 @@ public class SpikeService {
 			transformSpikeVoMessageToSpike(spikeVo,spike);
 			spikeMapper.updateByPrimaryKeySelective(spike);
 			saveSpikeToRedis(spike);
+			reCacheFirstPage();
 			return SpikeResult.OK_WITHOUT_BODY;
 		}else{
 			return AuthResult.AUTH_FAILED;

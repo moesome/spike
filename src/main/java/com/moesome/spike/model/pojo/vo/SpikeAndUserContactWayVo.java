@@ -1,12 +1,14 @@
 package com.moesome.spike.model.pojo.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 
 import java.util.Date;
 
 /**
  * 存放 spike 创建者联系方式以及 spike 信息
  */
+@Data
 public class SpikeAndUserContactWayVo {
 	// 所有者联系方式
 	private String phone;

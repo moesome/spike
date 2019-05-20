@@ -10,7 +10,6 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SpikeOrderVo {
-
 	private Long userId;
 	@NotNull
 	private Long spikeId;

@@ -121,7 +121,7 @@
     <select id="selectByPagination" resultMap="BaseResultMap">
         select * from spike order by id ${order} limit #{start},#{count}
     </select>
-    <select id="count" resultType="int">
+    <select id="count" resultType="java.lang.Integer">
         select count(*) from spike
     </select>
     <update id="decrementStockById">
@@ -133,9 +133,9 @@
     <select id="selectByUserIdPagination" resultMap="BaseResultMap">
         select * from spike where user_id = #{id} order by id ${order} limit #{start},#{count}
     </select>
-    <delete id="countByUserId">
+    <select id="countByUserId" resultType="java.lang.Integer">
         select count(*) from spike where user_id = #{id}
-    </delete>
+    </select>
     <select id="selectSpikeAndUserContactWayBySpikeId"
             resultType="com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo">
         select

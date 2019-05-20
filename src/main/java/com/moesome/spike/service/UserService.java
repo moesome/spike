@@ -3,6 +3,7 @@ package com.moesome.spike.service;
 import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.UserMapper;
 import com.moesome.spike.model.domain.User;
+import com.moesome.spike.model.pojo.vo.SendVo;
 import com.moesome.spike.model.pojo.vo.UserVo;
 import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.result.Result;
@@ -13,13 +14,18 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class UserService {
 	@Autowired
 	private UserMapper userMapper;
 
-	@Autowired AuthService authService;
+	@Autowired
+	private AuthService authService;
+
+	@Autowired
+	private SpikeService spikeService;
 
 	public Result store(UserVo userVo){
 		Long i = userMapper.selectIdByUsername(userVo.getUsername());
@@ -60,6 +66,8 @@ public class UserService {
 			String s = authService.saveUserAndGenerateSessionId(user);
 			// 设置新 cookie
 			authService.setCookie(s,httpServletResponse);
+			// 刷新第一页（第一页用户名可能会变）
+			spikeService.reCacheFirstPage();
 			return new UserResult(SuccessCode.OK,user);
 		}else{
 			return AuthResult.AUTH_FAILED;
@@ -76,5 +84,13 @@ public class UserService {
 		}else{
 			return AuthResult.AUTH_FAILED;
 		}
+	}
+
+	public List<SendVo> selectSendVoByUserId(Long userId, String order, int start, int count){
+		return userMapper.selectSendVoByUserId(userId, order, start, count);
+	}
+
+	public Integer countSendVoByUserId(Long userId){
+		return userMapper.countSendVoByUserId(userId);
 	}
 }

@@ -97,6 +97,7 @@ public class SpikeOrderService {
 		// 检查是否登录
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
+		spikeOrderVo.setUserId(user.getId());
 		Long spikeId = spikeOrderVo.getSpikeId();
 		// 阻止多次重复下单
 		SpikeOrderVo spikeOrderVoInRedis = redisTemplateForSpikeOrderVo.opsForValue().get(generateSpikeOrderVoKey(spikeOrderVo));
@@ -116,18 +117,13 @@ public class SpikeOrderService {
 		}
 		Date startAt = (Date)redisTemplateForSpike.opsForHash().get("spike" + spikeId, "startAt");
 		Date endAt = (Date)redisTemplateForSpike.opsForHash().get("spike" + spikeId, "endAt");
+
 		if (startAt == null||endAt == null){
 			// redis 查出的结果无效则还是在数据库中取
 			Spike spike = spikeService.getSpikeById(spikeId);
 			startAt = spike.getStartAt();
 			endAt = spike.getEndAt();
-			System.out.println("查数据库");
-		}else{
-			System.out.println("查缓存");
 		}
-		System.out.println(startAt);
-		System.out.println(endAt);
-
 		Date now = new Date();
 		// 在开始之前或结束之后则直接返回错误码
 		if (now.compareTo(startAt) < 0 ){
@@ -180,7 +176,7 @@ public class SpikeOrderService {
 			@Override
 			protected void doInTransactionWithoutResult(TransactionStatus status) {
 				try{
-					System.out.println("减库存");
+					// System.out.println("减库存");
 					// 减库存
 					boolean decrementStock = spikeService.decrementStock(spikeOrderVo.getSpikeId());
 					if (!decrementStock){
@@ -190,12 +186,14 @@ public class SpikeOrderService {
 					// 下订单
 					SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), new Date(), (byte) 1);
 					insert(spikeOrder);
-					System.out.println("下订单");
+					// System.out.println("下订单");
 					// 订单加入缓存
 					// spikeOrder 主键已由 mybatis 在插入成功后自动注入
 					redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),spikeOrder);
+					// 刷新第一页缓存
+					spikeService.reCacheFirstPage();
 				}catch (Exception e){
-					System.out.println("发生异常，进行回滚");
+					// System.out.println("发生异常，进行回滚");
 					status.setRollbackOnly();
 					// 抛出错误让重试框架捕获，错误两次则会由 recover 方法进行处理
 					throw e;
@@ -205,7 +203,7 @@ public class SpikeOrderService {
 	}
 	@Recover
 	void resolverOrderFailed(Exception e,SpikeOrderVo spikeOrderVo){
-		System.out.println("重试失败，交易未成功！");
+		// System.out.println("重试失败，交易未成功！");
 		// 未成功交易应该给缓存中加一
 		SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), null, (byte) 1);
 		redisTemplate.opsForHash().increment("spike" + spikeOrderVo.getSpikeId(), "stock", 1);
@@ -248,7 +246,7 @@ public class SpikeOrderService {
 		int p = CommonService.pageFormat(page);
 		String o = CommonService.orderFormat(order);
 		List<SpikeOrderAndSpikeVo> spikeOrderAndSpikeVos = spikeOrderMapper.selectSpikeOrderAndSpikeVoByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
-		int count = spikeOrderMapper.countByUserId(user.getId());
+		Integer count = spikeOrderMapper.countByUserId(user.getId());
 		return new SpikeOrderResult(SuccessCode.OK,spikeOrderAndSpikeVos,count);
 	}
 
@@ -258,5 +256,9 @@ public class SpikeOrderService {
 
 	public void updateByPrimaryKeySelective(SpikeOrder spikeOrderToChangeStatus) {
 		spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
+	}
+
+	public Long selectSpikeOwnerIdBySpikeOrderId(Long spikeOrderId){
+		return	spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
 	}
 }

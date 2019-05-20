@@ -12,7 +12,7 @@ public class MQSender {
 	AmqpTemplate amqpTemplate;
 
 	public void sendToSpikeTopic(SpikeOrderVo spikeOrderVo){
-		System.out.println("发送订单至队列"+spikeOrderVo);
+		// System.out.println("发送订单至队列"+spikeOrderVo);
 		amqpTemplate.convertAndSend(MQConfig.TOPIC_SPIKE_QUEUE_EXCHANGE,MQConfig.TOPIC_SPIKE_QUEUE_ROUTING_KEY,spikeOrderVo);
 	}
 

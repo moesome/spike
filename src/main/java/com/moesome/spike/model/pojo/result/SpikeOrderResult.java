@@ -10,15 +10,13 @@ import java.util.List;
 @Data
 public class SpikeOrderResult extends Result<List<SpikeOrderAndSpikeVo>>{
 
-	int count;
-
-	public static final SpikeOrderResult NOTICE_SUCCESS = new SpikeOrderResult(SuccessCode.OK);
+	Integer count;
 
 	public SpikeOrderResult(Code code) {
 		super(code);
 	}
 
-	public SpikeOrderResult(Code code, List<SpikeOrderAndSpikeVo> object,int count) {
+	public SpikeOrderResult(Code code, List<SpikeOrderAndSpikeVo> object,Integer count) {
 		super(code, object);
 		this.count = count;
 	}

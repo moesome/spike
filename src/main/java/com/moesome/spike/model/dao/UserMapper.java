@@ -22,5 +22,7 @@ public interface UserMapper {
 
 	User selectByUsername(String username);
 
-	List<SendVo> selectSendVoByUserId(Long id);
+	List<SendVo> selectSendVoByUserId(Long userId, String order, int start, int count);
+
+	Integer countSendVoByUserId(Long userId);
 }

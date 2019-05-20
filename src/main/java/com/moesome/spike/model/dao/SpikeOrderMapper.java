@@ -20,5 +20,7 @@ public interface SpikeOrderMapper {
 
     List<SpikeOrderAndSpikeVo> selectSpikeOrderAndSpikeVoByUserIdPagination(Long userId, String order, int start, int count);
 
-    int countByUserId(Long userId);
+    Integer countByUserId(Long userId);
+
+    Long selectSpikeOwnerIdBySpikeOrderId(Long spikeId);
 }

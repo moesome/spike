@@ -40,7 +40,7 @@ public class SpikeController implements InitializingBean {
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
+	public void afterPropertiesSet(){
 		spikeService.init();
 	}
 }

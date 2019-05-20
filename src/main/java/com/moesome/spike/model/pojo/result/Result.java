@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class Result<T> {
-	private int code;
+	private Integer code;
 	private String message;
 	private Long timestamp;
 	private T object;

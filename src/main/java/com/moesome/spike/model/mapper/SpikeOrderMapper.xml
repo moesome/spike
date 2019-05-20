@@ -109,7 +109,23 @@
             spike_order.spike_id = spike.id
         where spike_order.user_id = #{userId} order by spike_order.id ${order} limit #{start},#{count}
     </select>
-    <select id="countByUserId" resultType="int">
+    <select id="countByUserId" resultType="java.lang.Integer">
         select count(*) from spike_order where user_id = #{userId,jdbcType=INTEGER}
+    </select>
+    <select id="selectSpikeOwnerIdBySpikeOrderId" resultType="java.lang.Long">
+        select
+            user.id
+        from
+            spike_order
+        left join
+            spike
+        on
+            spike_order.spike_id = spike.id
+        left join
+            user
+        on
+            spike.user_id = user.id
+        where
+            spike_order.id = #{spikeId,jdbcType=BIGINT}
     </select>
 </mapper>
