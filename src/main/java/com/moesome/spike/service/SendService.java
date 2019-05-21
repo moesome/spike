@@ -1,6 +1,9 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.model.dao.SpikeMapper;
+import com.moesome.spike.model.dao.SpikeOrderMapper;
+import com.moesome.spike.model.dao.UserMapper;
 import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.result.SendResult;
@@ -17,31 +20,35 @@ import java.util.List;
 @Service
 public class SendService {
 	@Autowired
-	private SpikeService spikeService;
+	private CommonService commonService;
 
 	@Autowired
-	private SpikeOrderService spikeOrderService;
+	private SpikeMapper spikeMapper;
 
 	@Autowired
-	private UserService userService;
+	private SpikeOrderMapper spikeOrderMapper;
+
+	@Autowired
+	private UserMapper userMapper;
+
 
 	public Result remindToSendProduction(User user, Long spikeOrderId) {
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
-		SpikeOrder spikeOrder = spikeOrderService.selectByPrimaryKey(spikeOrderId);
+		SpikeOrder spikeOrder = spikeOrderMapper.selectByPrimaryKey(spikeOrderId);
 		if (spikeOrder.getUserId().equals(user.getId())){
 			Long spikeId = spikeOrder.getSpikeId();
 			// 根据 spikeId 查创建者，先查出订单（后续考虑增加发送邮件功能）
 			// 然后根据订单中的 id 编号查询，这里使用联表查询。
-			SpikeAndUserContactWayVo spikeAndUserContactWayBySpikeId = spikeService.getSpikeAndUserContactWayBySpikeId(spikeId);
+			SpikeAndUserContactWayVo spikeAndUserContactWayBySpikeId = spikeMapper.selectSpikeAndUserContactWayBySpikeId(spikeId);
 			if (spikeOrder.getStatus() == 1){
 				// 改变订单状态
 				SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
 				spikeOrderToChangeStatus.setId(spikeOrderId);
 				spikeOrderToChangeStatus.setStatus((byte) 4);
-				spikeOrderService.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
+				spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
 
-				// 发送邮件通知作者发货
+				// 发送邮件通知作者发货（还未实现）
 				// 邮件包含收获者邮箱，和发货确认链接
 				return SendResult.NOTICE_SUCCESS;
 			}else{
@@ -53,23 +60,25 @@ public class SendService {
 	}
 
 	public Result index(int page, String order, User user) {
-		String o = CommonService.orderFormat(order);
-		int p = CommonService.pageFormat(page);
-		List<SendVo> sendVos = userService.selectSendVoByUserId(user.getId(), o, (p - 1) * 10, 10);
+		if (user == null)
+			return AuthResult.UNAUTHORIZED;
+		String o = commonService.orderFormat(order);
+		int p = commonService.pageFormat(page);
+		List<SendVo> sendVos = userMapper.selectSendVoByUserId(user.getId(), o, (p - 1) * 10, 10);
 		// System.out.println(sendVos);
-		Integer count = userService.countSendVoByUserId(user.getId());
+		Integer count = userMapper.countSendVoByUserId(user.getId());
 		return new SendResult(SuccessCode.OK,sendVos,count);
 	}
 
 	public Result sendProduction(User user, Long spikeOrderId) {
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
-		Long spikeOrderOwnerId = spikeOrderService.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
+		Long spikeOrderOwnerId = spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
 		if (spikeOrderOwnerId.equals(user.getId())){
 			SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
 			spikeOrderToChangeStatus.setId(spikeOrderId);
 			spikeOrderToChangeStatus.setStatus((byte) 5);
-			spikeOrderService.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
+			spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
 			return SendResult.NOTICE_SUCCESS;
 		}else{
 			return AuthResult.UNAUTHORIZED;

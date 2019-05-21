@@ -21,6 +21,9 @@ import java.util.List;
 @Service
 public class SpikeService {
 	@Autowired
+	private CommonService commonService;
+
+	@Autowired
 	private SpikeMapper spikeMapper;
 
 	@Autowired
@@ -50,8 +53,8 @@ public class SpikeService {
 	}
 
 	public Result index(String order, int page){
-		String o = CommonService.orderFormat(order);
-		int p = CommonService.pageFormat(page);
+		String o = commonService.orderFormat(order);
+		int p = commonService.pageFormat(page);
 		List<Spike> spikeList;
 		Integer count;
 		if (o.equals("DESC") && p == 1){
@@ -70,7 +73,7 @@ public class SpikeService {
 		return new SpikeResult(SuccessCode.OK,spikeList, count);
 	}
 
-	public void reCacheFirstPage(){
+	private void reCacheFirstPage(){
 		// System.out.println("刷新商品第一页缓存");
 		// 缓存商品第一页
 		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",spikeMapper.selectByPagination("DESC", 0, 10));
@@ -100,8 +103,8 @@ public class SpikeService {
 	public Result manage(User user, String order, int page) {
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
-		String o = CommonService.orderFormat(order);
-		int p = CommonService.pageFormat(page);
+		String o = commonService.orderFormat(order);
+		int p = commonService.pageFormat(page);
 		List<Spike> spikeList = spikeMapper.selectByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
 		Integer count = spikeMapper.countByUserId();
 		return new SpikeResult(SuccessCode.OK,spikeList, count);
@@ -162,10 +165,6 @@ public class SpikeService {
 		spike.setStock(spikeVo.getStock());
 		spike.setStartAt(spikeVo.getStartAt());
 		spike.setEndAt(spikeVo.getEndAt());
-	}
-
-	public SpikeAndUserContactWayVo getSpikeAndUserContactWayBySpikeId(Long spikeId) {
-		return spikeMapper.selectSpikeAndUserContactWayBySpikeId(spikeId);
 	}
 
 }

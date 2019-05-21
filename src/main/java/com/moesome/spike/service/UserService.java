@@ -1,7 +1,9 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.dao.UserMapper;
+import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.vo.SendVo;
 import com.moesome.spike.model.pojo.vo.UserVo;
@@ -10,6 +12,7 @@ import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.model.pojo.result.UserResult;
 import com.moesome.spike.util.EncryptUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
@@ -19,13 +22,13 @@ import java.util.List;
 @Service
 public class UserService {
 	@Autowired
+	private CommonService commonService;
+
+	@Autowired
 	private UserMapper userMapper;
 
 	@Autowired
-	private AuthService authService;
-
-	@Autowired
-	private SpikeService spikeService;
+	private RedisService redisService;
 
 	public Result store(UserVo userVo){
 		Long i = userMapper.selectIdByUsername(userVo.getUsername());
@@ -61,13 +64,13 @@ public class UserService {
 			user.setUpdatedAt(new Date());
 			userMapper.updateByPrimaryKeySelective(user);
 			// 删除旧缓存
-			authService.refreshMsgInRedis(sessionId,0);
+			redisService.refreshMsgInRedis(sessionId,0);
 			// 创建新缓存
-			String s = authService.saveUserAndGenerateSessionId(user);
+			String s = redisService.saveUserAndGenerateSessionId(user);
 			// 设置新 cookie
-			authService.setCookie(s,httpServletResponse);
+			commonService.setCookie(s,httpServletResponse);
 			// 刷新第一页（第一页用户名可能会变）
-			spikeService.reCacheFirstPage();
+			redisService.reCacheFirstPage();
 			return new UserResult(SuccessCode.OK,user);
 		}else{
 			return AuthResult.AUTH_FAILED;
@@ -86,11 +89,8 @@ public class UserService {
 		}
 	}
 
-	public List<SendVo> selectSendVoByUserId(Long userId, String order, int start, int count){
-		return userMapper.selectSendVoByUserId(userId, order, start, count);
-	}
 
-	public Integer countSendVoByUserId(Long userId){
-		return userMapper.countSendVoByUserId(userId);
+	public User getUserByUserName(String username){
+		return userMapper.selectByUsername(username);
 	}
 }

@@ -1,6 +1,7 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.dao.SpikeOrderMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.SpikeOrder;
@@ -26,17 +27,24 @@ import java.util.List;
 
 @Service
 public class SpikeOrderService {
-	private static final Object lock = new Object();
+	//private static final Object lock = new Object();
+	@Autowired
+	private CommonService commonService;
 
 	@Autowired
-	private SpikeService spikeService;
+	private RedisService redisService;
+
+	@Autowired
+	private SpikeMapper spikeMapper;
 
 	@Autowired
 	private SpikeOrderMapper spikeOrderMapper;
 
+	// 取预减库存使用
 	@Autowired
 	private RedisTemplate<String, Integer> redisTemplate;
 
+	// 存储订单结果，供下单后轮询使用
 	@Autowired
 	private RedisTemplate<String, SpikeOrder> redisTemplateForSpikeOrder;
 
@@ -44,6 +52,7 @@ public class SpikeOrderService {
 	@Autowired
 	private RedisTemplate<String, SpikeOrderVo> redisTemplateForSpikeOrderVo;
 
+	// 取日期使用
 	@Autowired
 	private RedisTemplate<String, Object> redisTemplateForSpike;
 
@@ -52,6 +61,8 @@ public class SpikeOrderService {
 
 	@Autowired
 	private TransactionTemplate transactionTemplate;
+
+
 
 	public static final SpikeOrder ORDER_FAILED = new SpikeOrder(-1L,null,null,null,null);
 	/*
@@ -120,7 +131,7 @@ public class SpikeOrderService {
 
 		if (startAt == null||endAt == null){
 			// redis 查出的结果无效则还是在数据库中取
-			Spike spike = spikeService.getSpikeById(spikeId);
+			Spike spike = spikeMapper.selectByPrimaryKey(spikeId);
 			startAt = spike.getStartAt();
 			endAt = spike.getEndAt();
 		}
@@ -178,7 +189,7 @@ public class SpikeOrderService {
 				try{
 					// System.out.println("减库存");
 					// 减库存
-					boolean decrementStock = spikeService.decrementStock(spikeOrderVo.getSpikeId());
+					boolean decrementStock = spikeMapper.decrementStockById(spikeOrderVo.getSpikeId()) > 0;
 					if (!decrementStock){
 						System.out.println("减库存失败");
 						return;
@@ -191,7 +202,7 @@ public class SpikeOrderService {
 					// spikeOrder 主键已由 mybatis 在插入成功后自动注入
 					redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),spikeOrder);
 					// 刷新第一页缓存
-					spikeService.reCacheFirstPage();
+					redisService.reCacheFirstPage();
 				}catch (Exception e){
 					// System.out.println("发生异常，进行回滚");
 					status.setRollbackOnly();
@@ -201,6 +212,10 @@ public class SpikeOrderService {
 			}
 		});
 	}
+
+
+
+
 	@Recover
 	void resolverOrderFailed(Exception e,SpikeOrderVo spikeOrderVo){
 		// System.out.println("重试失败，交易未成功！");
@@ -210,11 +225,11 @@ public class SpikeOrderService {
 		redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),ORDER_FAILED);
 	}
 
-	private static String generateSpikeOrderKey(SpikeOrder spikeOrder){
+	private String generateSpikeOrderKey(SpikeOrder spikeOrder){
 		return "spikeOrder-userId:"+spikeOrder.getUserId()+"-spikeId:"+spikeOrder.getSpikeId();
 	}
 
-	private static String generateSpikeOrderVoKey(SpikeOrderVo spikeOrderVo){
+	private String generateSpikeOrderVoKey(SpikeOrderVo spikeOrderVo){
 		return "spikeOrderVo-userId:"+spikeOrderVo.getUserId()+"-spikeId:"+spikeOrderVo.getSpikeId();
 	}
 
@@ -243,22 +258,11 @@ public class SpikeOrderService {
 	public Result index(User user, String order, int page) {
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
-		int p = CommonService.pageFormat(page);
-		String o = CommonService.orderFormat(order);
+		int p = commonService.pageFormat(page);
+		String o = commonService.orderFormat(order);
 		List<SpikeOrderAndSpikeVo> spikeOrderAndSpikeVos = spikeOrderMapper.selectSpikeOrderAndSpikeVoByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
 		Integer count = spikeOrderMapper.countByUserId(user.getId());
 		return new SpikeOrderResult(SuccessCode.OK,spikeOrderAndSpikeVos,count);
 	}
 
-	public SpikeOrder selectByPrimaryKey(Long id) {
-		return spikeOrderMapper.selectByPrimaryKey(id);
-	}
-
-	public void updateByPrimaryKeySelective(SpikeOrder spikeOrderToChangeStatus) {
-		spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
-	}
-
-	public Long selectSpikeOwnerIdBySpikeOrderId(Long spikeOrderId){
-		return	spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
-	}
 }

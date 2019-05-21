@@ -3,9 +3,13 @@ package com.moesome.spike.model.domain;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
 	private Long id;
 

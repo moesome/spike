@@ -4,6 +4,7 @@ import com.moesome.spike.model.domain.User;
 import com.moesome.spike.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -18,7 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 @Component
 public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 	@Autowired
-	private AuthService authService;
+	private RedisTemplate<String,User> redisTemplate;
 
 	@Override
 	public boolean supportsParameter(MethodParameter parameter){
@@ -38,7 +39,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 		}else{
 			return null;
 		}
-		return authService.getUserBySessionId(sessionId);
+		return redisTemplate.opsForValue().get(sessionId);
 	}
 
 	private String getCookieValue(HttpServletRequest request, String cookieName) {
