@@ -62,9 +62,8 @@ public class SpikeOrderService {
 	@Autowired
 	private TransactionTemplate transactionTemplate;
 
-
-
 	public static final SpikeOrder ORDER_FAILED = new SpikeOrder(-1L,null,null,null,null);
+
 	/*
 	以下为并发可能出现错误的代码：
 	发生原因为启动了事务，可能多个事务在进入锁之前开启，查询时使用的视图可能没有及时被更新
@@ -99,7 +98,6 @@ public class SpikeOrderService {
 	 * 2. 收到请求时，redis 库存减一，如果还大于 0 则将秒杀请求加入队列（读写分离）
 	 * 3. 请求出队列，进行处理
 	 * 4. 客户端轮询，检查秒杀是否成功
-	 * 注意，以上流程存在缓存不一致问题
 	 * @param user
 	 * @param spikeOrderVo
 	 * @return
@@ -111,13 +109,16 @@ public class SpikeOrderService {
 		spikeOrderVo.setUserId(user.getId());
 		Long spikeId = spikeOrderVo.getSpikeId();
 		// 阻止多次重复下单
-		SpikeOrderVo spikeOrderVoInRedis = redisTemplateForSpikeOrderVo.opsForValue().get(generateSpikeOrderVoKey(spikeOrderVo));
-		if (spikeOrderVoInRedis != null){
-			// 已经下过单了
+		if (redisTemplateForSpikeOrderVo.opsForSet().add("spike_order_vo", spikeOrderVo) != 1){
 			return OrderResult.REPEATED_REQUEST;
-		}else{
-			redisTemplateForSpikeOrderVo.opsForValue().set(generateSpikeOrderVoKey(spikeOrderVo),spikeOrderVo);
 		}
+//		SpikeOrderVo spikeOrderVoInRedis = redisTemplateForSpikeOrderVo.opsForValue().get(generateSpikeOrderVoKey(spikeOrderVo));
+//		if (spikeOrderVoInRedis != null){
+//			// 已经下过单了
+//			return OrderResult.REPEATED_REQUEST;
+//		}else{
+//			redisTemplateForSpikeOrderVo.opsForValue().set(generateSpikeOrderVoKey(spikeOrderVo),spikeOrderVo);
+//		}
 		// 查库存到减订单加锁，已经用预减缓存策略优化掉了该锁
 		// synchronized (lock) {
 		// 查库存优化为直接对库存进行原子自增（减一），如果减少后大于 0 则说明还能下单
@@ -152,7 +153,7 @@ public class SpikeOrderService {
 	}
 
 	/*
-	优化为加入队列后执行操作
+	优化为加入队列后执行操作，注意，在一个类中被调用时，@Transactional 注解受限于 springaop 是无效的
 	@Transactional
 	boolean OrderAndDecrementStock(User user, Long spikeId){
 		// 下订单
@@ -192,13 +193,14 @@ public class SpikeOrderService {
 					boolean decrementStock = spikeMapper.decrementStockById(spikeOrderVo.getSpikeId()) > 0;
 					if (!decrementStock){
 						System.out.println("减库存失败");
+						resolverOrderFailed(null,spikeOrderVo);
 						return;
 					}
 					// 下订单
 					SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), new Date(), (byte) 1);
 					insert(spikeOrder);
 					// System.out.println("下订单");
-					// 订单加入缓存
+					// 订单加入缓存，用于轮询时查询
 					// spikeOrder 主键已由 mybatis 在插入成功后自动注入
 					redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),spikeOrder);
 					// 刷新第一页缓存
@@ -213,24 +215,18 @@ public class SpikeOrderService {
 		});
 	}
 
-
-
-
 	@Recover
 	void resolverOrderFailed(Exception e,SpikeOrderVo spikeOrderVo){
 		// System.out.println("重试失败，交易未成功！");
-		// 未成功交易应该给缓存中加一
+		// 未成功交易应该给缓存中加一，并取消缓存中的订单，给轮询的订单设置状态
 		SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), null, (byte) 1);
 		redisTemplate.opsForHash().increment("spike" + spikeOrderVo.getSpikeId(), "stock", 1);
 		redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),ORDER_FAILED);
+		redisTemplateForSpikeOrderVo.opsForSet().remove("spike_order_vo", spikeOrderVo);
 	}
 
 	private String generateSpikeOrderKey(SpikeOrder spikeOrder){
 		return "spikeOrder-userId:"+spikeOrder.getUserId()+"-spikeId:"+spikeOrder.getSpikeId();
-	}
-
-	private String generateSpikeOrderVoKey(SpikeOrderVo spikeOrderVo){
-		return "spikeOrderVo-userId:"+spikeOrderVo.getUserId()+"-spikeId:"+spikeOrderVo.getSpikeId();
 	}
 
 	private void insert(SpikeOrder spikeOrder) {

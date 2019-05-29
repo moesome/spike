@@ -16,9 +16,9 @@ import java.util.TimerTask;
 
 @Configuration
 public class MQConfig {
-	public static final String TOPIC_SPIKE_QUEUE = "topicSpike";
-	public static final String TOPIC_SPIKE_QUEUE_EXCHANGE = "topicExchange";
-	public static final String TOPIC_SPIKE_QUEUE_ROUTING_KEY = "topicSpikeRoutingKey";
+	public static final String SPIKE_QUEUE = "topicSpike";
+	public static final String DIRECT_SPIKE_EXCHANGE = "directSpikeExchange";
+	public static final String DIRECT_SPIKE_EXCHANGE_ROUTING_KEY = "spikeOrder";
 
 	// 设置对象转化器
 	@Bean
@@ -27,21 +27,20 @@ public class MQConfig {
 	}
 
 	@Bean
-	public Queue topicSpikeQueue(){
-		return new Queue(TOPIC_SPIKE_QUEUE,true);
+	public Queue spikeQueue(){
+		return new Queue(SPIKE_QUEUE,true);
 	}
 
 	// 构造交换机
 	@Bean
-	public TopicExchange topicExchange(){
-		return new TopicExchange(TOPIC_SPIKE_QUEUE_EXCHANGE);
+	public DirectExchange directExchange(){
+		return new DirectExchange(DIRECT_SPIKE_EXCHANGE);
 	}
 
 	// 根据返回值来确定该类是绑定类
 	@Bean
-	public Binding topicBinding(){
-		// 发送时路由信息为 topic.spike 才会被转发到 topicSpikeQueue 队列
-		return BindingBuilder.bind(topicSpikeQueue()).to(topicExchange()).with(TOPIC_SPIKE_QUEUE_ROUTING_KEY);
+	public Binding directBinding(){
+		return BindingBuilder.bind(spikeQueue()).to(directExchange()).with(DIRECT_SPIKE_EXCHANGE_ROUTING_KEY);
 	}
 }
 

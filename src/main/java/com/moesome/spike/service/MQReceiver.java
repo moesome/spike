@@ -12,7 +12,7 @@ public class MQReceiver {
 	@Autowired
 	private SpikeOrderService spikeOrderService;
 
-	@RabbitListener(queues = MQConfig.TOPIC_SPIKE_QUEUE)
+	@RabbitListener(queues = MQConfig.SPIKE_QUEUE)
 	public void receiveSpikeTopic(SpikeOrderVo spikeOrderVo){
 		spikeOrderService.resolveOrder(spikeOrderVo);
 	}
