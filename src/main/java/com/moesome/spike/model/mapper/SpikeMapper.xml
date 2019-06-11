@@ -1,122 +1,156 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.moesome.spike.model.dao.SpikeMapper">
-    <resultMap id="BaseResultMap" type="com.moesome.spike.model.domain.Spike">
-        <!--@mbg.generated-->
-        <id column="id" jdbcType="BIGINT" property="id" />
-        <result column="name" jdbcType="VARCHAR" property="name" />
-        <result column="user_id" jdbcType="BIGINT" property="userId" />
-        <result column="detail" jdbcType="VARCHAR" property="detail" />
-        <result column="start_at" jdbcType="TIMESTAMP" property="startAt" />
-        <result column="end_at" jdbcType="TIMESTAMP" property="endAt" />
-        <result column="stock" jdbcType="INTEGER" property="stock" />
-        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
-        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
-    </resultMap>
-    <sql id="Base_Column_List">
-        <!--@mbg.generated-->
-        id, `name`, user_id, detail, start_at, end_at, stock, created_at, updated_at
-    </sql>
-    <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
-        <!--@mbg.generated-->
-        select
-        <include refid="Base_Column_List" />
-        from spike
-        where id = #{id,jdbcType=BIGINT}
-    </select>
-    <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
-        <!--@mbg.generated-->
-        delete from spike
-        where id = #{id,jdbcType=BIGINT}
-    </delete>
-
-    <insert id="insertSelective" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.Spike" useGeneratedKeys="true">
-        <!--@mbg.generated-->
-        insert into spike
-        <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="name != null">
-                `name`,
-            </if>
-            <if test="userId != null">
-                user_id,
-            </if>
-            <if test="detail != null">
-                detail,
-            </if>
-            <if test="startAt != null">
-                start_at,
-            </if>
-            <if test="endAt != null">
-                end_at,
-            </if>
-            <if test="stock != null">
-                stock,
-            </if>
-            <if test="createdAt != null">
-                created_at,
-            </if>
-            <if test="updatedAt != null">
-                updated_at,
-            </if>
-        </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="name != null">
-                #{name,jdbcType=VARCHAR},
-            </if>
-            <if test="userId != null">
-                #{userId,jdbcType=BIGINT},
-            </if>
-            <if test="detail != null">
-                #{detail,jdbcType=VARCHAR},
-            </if>
-            <if test="startAt != null">
-                #{startAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="endAt != null">
-                #{endAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="stock != null">
-                #{stock,jdbcType=INTEGER},
-            </if>
-            <if test="createdAt != null">
-                #{createdAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="updatedAt != null">
-                #{updatedAt,jdbcType=TIMESTAMP},
-            </if>
-        </trim>
-    </insert>
-    <update id="updateByPrimaryKeySelective" parameterType="com.moesome.spike.model.domain.Spike">
-        <!--@mbg.generated-->
-        update spike
-        <set>
-            <if test="name != null">
-                `name` = #{name,jdbcType=VARCHAR},
-            </if>
-            <if test="userId != null">
-                user_id = #{userId,jdbcType=BIGINT},
-            </if>
-            <if test="detail != null">
-                detail = #{detail,jdbcType=VARCHAR},
-            </if>
-            <if test="startAt != null">
-                start_at = #{startAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="endAt != null">
-                end_at = #{endAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="stock != null">
-                stock = #{stock,jdbcType=INTEGER},
-            </if>
-            <if test="createdAt != null">
-                created_at = #{createdAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="updatedAt != null">
-                updated_at = #{updatedAt,jdbcType=TIMESTAMP},
-            </if>
-        </set>
-        where id = #{id,jdbcType=BIGINT}
-    </update>
+  <resultMap id="BaseResultMap" type="com.moesome.spike.model.domain.Spike">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="user_id" jdbcType="BIGINT" property="userId" />
+    <result column="detail" jdbcType="VARCHAR" property="detail" />
+    <result column="start_at" jdbcType="TIMESTAMP" property="startAt" />
+    <result column="end_at" jdbcType="TIMESTAMP" property="endAt" />
+    <result column="stock" jdbcType="INTEGER" property="stock" />
+    <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
+    <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
+    <result column="price" jdbcType="DECIMAL" property="price" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, `name`, user_id, detail, start_at, end_at, stock, created_at, updated_at, price
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    <!--@mbg.generated-->
+    select 
+    <include refid="Base_Column_List" />
+    from spike
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    <!--@mbg.generated-->
+    delete from spike
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.Spike" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into spike (`name`, user_id, detail, 
+      start_at, end_at, stock, 
+      created_at, updated_at, price
+      )
+    values (#{name,jdbcType=VARCHAR}, #{userId,jdbcType=BIGINT}, #{detail,jdbcType=VARCHAR}, 
+      #{startAt,jdbcType=TIMESTAMP}, #{endAt,jdbcType=TIMESTAMP}, #{stock,jdbcType=INTEGER}, 
+      #{createdAt,jdbcType=TIMESTAMP}, #{updatedAt,jdbcType=TIMESTAMP}, #{price,jdbcType=DECIMAL}
+      )
+  </insert>
+  <insert id="insertSelective" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.Spike" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into spike
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="name != null">
+        `name`,
+      </if>
+      <if test="userId != null">
+        user_id,
+      </if>
+      <if test="detail != null">
+        detail,
+      </if>
+      <if test="startAt != null">
+        start_at,
+      </if>
+      <if test="endAt != null">
+        end_at,
+      </if>
+      <if test="stock != null">
+        stock,
+      </if>
+      <if test="createdAt != null">
+        created_at,
+      </if>
+      <if test="updatedAt != null">
+        updated_at,
+      </if>
+      <if test="price != null">
+        price,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=BIGINT},
+      </if>
+      <if test="detail != null">
+        #{detail,jdbcType=VARCHAR},
+      </if>
+      <if test="startAt != null">
+        #{startAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endAt != null">
+        #{endAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stock != null">
+        #{stock,jdbcType=INTEGER},
+      </if>
+      <if test="createdAt != null">
+        #{createdAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updatedAt != null">
+        #{updatedAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="price != null">
+        #{price,jdbcType=DECIMAL},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.moesome.spike.model.domain.Spike">
+    <!--@mbg.generated-->
+    update spike
+    <set>
+      <if test="name != null">
+        `name` = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=BIGINT},
+      </if>
+      <if test="detail != null">
+        detail = #{detail,jdbcType=VARCHAR},
+      </if>
+      <if test="startAt != null">
+        start_at = #{startAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endAt != null">
+        end_at = #{endAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stock != null">
+        stock = #{stock,jdbcType=INTEGER},
+      </if>
+      <if test="createdAt != null">
+        created_at = #{createdAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updatedAt != null">
+        updated_at = #{updatedAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="price != null">
+        price = #{price,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.moesome.spike.model.domain.Spike">
+    <!--@mbg.generated-->
+    update spike
+    set `name` = #{name,jdbcType=VARCHAR},
+      user_id = #{userId,jdbcType=BIGINT},
+      detail = #{detail,jdbcType=VARCHAR},
+      start_at = #{startAt,jdbcType=TIMESTAMP},
+      end_at = #{endAt,jdbcType=TIMESTAMP},
+      stock = #{stock,jdbcType=INTEGER},
+      created_at = #{createdAt,jdbcType=TIMESTAMP},
+      updated_at = #{updatedAt,jdbcType=TIMESTAMP},
+      price = #{price,jdbcType=DECIMAL}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
 
     <select id="selectByPagination" resultMap="BaseResultMap">
         select * from spike order by id ${order} limit #{start},#{count}
@@ -136,8 +170,7 @@
     <select id="countByUserId" resultType="java.lang.Integer">
         select count(*) from spike where user_id = #{id}
     </select>
-    <select id="selectSpikeAndUserContactWayBySpikeId"
-            resultType="com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo">
+    <select id="selectSpikeAndUserContactWayBySpikeId" resultType="com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo">
         select
             user.email as email,
             user.phone as phone,
@@ -151,6 +184,14 @@
         where
             spike.id = #{spikeId,jdbcType=BIGINT}
     </select>
+  <select id="selectPriceByPrimaryKey" resultType="java.math.BigDecimal">
+    select
+        price
+    from
+        spike
+    where
+        id = #{id,jdbcType=BIGINT}
+  </select>
 
 
 </mapper>

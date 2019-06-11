@@ -29,4 +29,8 @@ public class UserController {
 	public Result update(@CookieValue(required = false) String sessionId, User user, @PathVariable Long id, @RequestBody @Validated UserVo userVo, HttpServletResponse httpServletResponse){
 		return userService.update(sessionId,user,userVo,id,httpServletResponse);
 	}
+
+	public Result delete(String sessionId,Long id){
+		return userService.delete(sessionId,id);
+	}
 }

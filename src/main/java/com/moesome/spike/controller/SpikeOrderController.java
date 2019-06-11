@@ -20,8 +20,8 @@ public class SpikeOrderController {
 
 	// 此处传入的 pojo 仅仅接收秒杀 id 即可，无需校验用户名是否为空，用户名在 session 内提取
 	@PatchMapping("/spike_orders")
-	public Result store(User user, @RequestBody @Validated SpikeOrderVo spikeOrderVo){
-		return spikeOrderService.store(user,spikeOrderVo);
+	public Result store(@CookieValue String sessionId,User user, @RequestBody @Validated SpikeOrderVo spikeOrderVo){
+		return spikeOrderService.store(user,spikeOrderVo,sessionId);
 	}
 
 	@GetMapping("/spike_orders/check/{spikeId}")

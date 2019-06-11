@@ -4,6 +4,7 @@ import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.User;
+import com.moesome.spike.model.pojo.result.ExceptionResult;
 import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
 import com.moesome.spike.model.pojo.vo.SpikeVo;
 import com.moesome.spike.model.pojo.result.AuthResult;
@@ -27,10 +28,7 @@ public class SpikeService {
 	private SpikeMapper spikeMapper;
 
 	@Autowired
-	private RedisTemplate<String,Object> redisTemplateForSaveSpike;
-
-	@Autowired
-	private RedisTemplate<String,List<Spike>> redisTemplateForFirstPage;
+	private RedisService redisService;
 	/**
 	 * 优化秒杀，将秒杀要用到的一些参数写入缓存，如果这些值能通过验证再写入数据库
 	 */
@@ -40,16 +38,16 @@ public class SpikeService {
 		int i = 0;//计数
 		for (Spike spike : spikes){
 			// 缓存秒杀验证数据
-			saveSpikeToRedis(spike);
+			redisService.saveSpike(spike);
 			if (i + 10 >= spikes.size()){
 				firstPage.push(spike);
 			}
 			i++;
 		}
 		// 缓存商品第一页
-		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",firstPage);
+		redisService.cacheFirstPage(firstPage);
 		// 缓存总数
-		redisTemplateForSaveSpike.opsForValue().set("count",i);
+		redisService.cachePageCount(i);
 	}
 
 	public Result index(String order, int page){
@@ -59,8 +57,8 @@ public class SpikeService {
 		Integer count;
 		if (o.equals("DESC") && p == 1){
 			// 返回缓存
-			spikeList = redisTemplateForFirstPage.opsForValue().get("firstSpikePage");
-			count = (Integer) redisTemplateForSaveSpike.opsForValue().get("count");
+			spikeList = redisService.getFirstPage();
+			count = redisService.getPageCount();
 			// 缓存有效直接返回
 			if (spikeList != null && count != null){
 				// System.out.println("查缓存第一页");
@@ -73,14 +71,6 @@ public class SpikeService {
 		return new SpikeResult(SuccessCode.OK,spikeList, count);
 	}
 
-	private void reCacheFirstPage(){
-		// System.out.println("刷新商品第一页缓存");
-		// 缓存商品第一页
-		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",spikeMapper.selectByPagination("DESC", 0, 10));
-		// 缓存总数
-		redisTemplateForSaveSpike.opsForValue().set("count",spikeMapper.count());
-	}
-
 	/**
 	 * 根据 id 查秒杀项目
 	 * @param spikeId
@@ -90,15 +80,6 @@ public class SpikeService {
 		return spikeMapper.selectByPrimaryKey(spikeId);
 	}
 
-	public boolean decrementStock(Long spikeId){
-		return spikeMapper.decrementStockById(spikeId) > 0;
-	}
-
-	private void saveSpikeToRedis(Spike spike){
-		redisTemplateForSaveSpike.opsForHash().put("spike"+spike.getId(),"stock",spike.getStock());
-		redisTemplateForSaveSpike.opsForHash().put("spike"+spike.getId(),"startAt",spike.getStartAt());
-		redisTemplateForSaveSpike.opsForHash().put("spike"+spike.getId(),"endAt",spike.getEndAt());
-	}
 
 	public Result manage(User user, String order, int page) {
 		if (user == null)
@@ -120,17 +101,20 @@ public class SpikeService {
 		spike.setUserId(user.getId());
 		transformSpikeVoMessageToSpike(spikeVo,spike);
 		spikeMapper.insertSelective(spike);
-		saveSpikeToRedis(spike);
-		reCacheFirstPage();
-		return SpikeResult.OK_WITHOUT_BODY;
+		redisService.saveSpike(spike);
+		redisService.reCacheFirstPage();
+		ArrayList<Spike> arrayList = new ArrayList<>(1);
+		arrayList.add(spike);
+		return new SpikeResult(SuccessCode.OK,arrayList,1);
 	}
+
 
 	public Result show(User user,Long id) {
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
 		List<Spike> list = new ArrayList<>(1);
 		Spike spike = getSpikeById(id);// 从数据库中取出
-		if (spike.getUserId().equals(user.getId())){ // 校验取出的数据用户是否拥有
+		if (spike != null && spike.getUserId().equals(user.getId())){ // 校验取出的数据用户是否拥有
 			list.add(spike);
 			return new SpikeResult(SuccessCode.OK,list,1);
 		}else{
@@ -151,8 +135,25 @@ public class SpikeService {
 			spike.setUpdatedAt(new Date());
 			transformSpikeVoMessageToSpike(spikeVo,spike);
 			spikeMapper.updateByPrimaryKeySelective(spike);
-			saveSpikeToRedis(spike);
-			reCacheFirstPage();
+			redisService.saveSpike(spike);
+			redisService.reCacheFirstPage();
+			return SpikeResult.OK_WITHOUT_BODY;
+		}else{
+			return AuthResult.AUTH_FAILED;
+		}
+	}
+
+	public Result delete(User user,Long id){
+		if (user == null)
+			return AuthResult.UNAUTHORIZED;
+		Spike spike = getSpikeById(id);// 从数据库中取出
+		if (spike != null && spike.getUserId().equals(user.getId())){ // 校验取出的数据用户是否拥有
+			// 删除数据库
+			spikeMapper.deleteByPrimaryKey(id);
+			// 删除 redis
+			redisService.removeSpike(spike);
+			// 刷新第一页缓存
+			redisService.reCacheFirstPage();
 			return SpikeResult.OK_WITHOUT_BODY;
 		}else{
 			return AuthResult.AUTH_FAILED;
@@ -165,6 +166,7 @@ public class SpikeService {
 		spike.setStock(spikeVo.getStock());
 		spike.setStartAt(spikeVo.getStartAt());
 		spike.setEndAt(spikeVo.getEndAt());
+		spike.setPrice(spikeVo.getPrice());
 	}
 
 }

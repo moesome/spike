@@ -17,7 +17,6 @@ public class SendVo {
 	// spike_order
 	private Long spikeOrderId;
 
-	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	private Date createdAt;
 
 	private Byte status;

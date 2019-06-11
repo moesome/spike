@@ -1,30 +1,36 @@
 package com.moesome.spike.model.dao;
 
-import com.moesome.spike.model.domain.Spike;
-import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
+import com.moesome.spike.model.domain.Spike;import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface SpikeMapper {
-    List<Spike> selectAll();
+	int deleteByPrimaryKey(Long id);
 
-    List<Spike> selectByPagination(String order,int start,int count);
+	int insert(Spike record);
 
-    List<Spike> selectByUserIdPagination(Long id,String order,int start,int count);
+	int insertSelective(Spike record);
 
-    SpikeAndUserContactWayVo selectSpikeAndUserContactWayBySpikeId(Long spikeId);
+	Spike selectByPrimaryKey(Long id);
 
-    int decrementStockById(Long id);
+	BigDecimal selectPriceByPrimaryKey(Long id);
 
-    Integer count();
+	int updateByPrimaryKeySelective(Spike record);
 
-    Integer countByUserId();
+	int updateByPrimaryKey(Spike record);
 
-    int deleteByPrimaryKey(Long id);
+	List<Spike> selectAll();
 
-    int insertSelective(Spike record);
+	List<Spike> selectByPagination(String order, int start, int count);
 
-    Spike selectByPrimaryKey(Long id);
+	List<Spike> selectByUserIdPagination(Long id, String order, int start, int count);
 
-    int updateByPrimaryKeySelective(Spike record);
+	SpikeAndUserContactWayVo selectSpikeAndUserContactWayBySpikeId(Long spikeId);
+
+	int decrementStockById(Long id);
+
+	Integer count();
+
+	Integer countByUserId();
 }

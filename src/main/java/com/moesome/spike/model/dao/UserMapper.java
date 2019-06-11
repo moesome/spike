@@ -1,8 +1,8 @@
 package com.moesome.spike.model.dao;
 
-import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.pojo.vo.SendVo;
+import com.moesome.spike.model.domain.User;import com.moesome.spike.model.pojo.vo.SendVo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface UserMapper {
@@ -13,6 +13,8 @@ public interface UserMapper {
 	int insertSelective(User record);
 
 	User selectByPrimaryKey(Long id);
+
+	int decrementCoinById(BigDecimal decrement, Long id);
 
 	int updateByPrimaryKeySelective(User record);
 

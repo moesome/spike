@@ -3,13 +3,15 @@ package com.moesome.spike.service;
 import com.moesome.spike.config.RedisConfig;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.domain.Spike;
+import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
+import com.moesome.spike.model.pojo.vo.SpikeOrderVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -18,16 +20,125 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class RedisService {
 	@Autowired
-	private RedisTemplate<String, User> redisTemplate;
+	private RedisTemplate<String, User> redisTemplateForUser;
 
 	@Autowired
 	private RedisTemplate<String, List<Spike>> redisTemplateForFirstPage;
 
 	@Autowired
-	private RedisTemplate<String, Integer> redisTemplateForInteger;
+	private SpikeMapper spikeMapper;
 
 	@Autowired
-	private SpikeMapper spikeMapper;
+	private RedisTemplate<String,Object> redisTemplateForSpike;
+
+	// 取预减库存使用
+	@Autowired
+	private RedisTemplate<String, Integer> redisTemplateForSpikeOrderPreDecrement;
+
+	// 存储订单结果，供下单后轮询使用
+	@Autowired
+	private RedisTemplate<String, SpikeOrder> redisTemplateForSpikeOrder;
+
+	// 校验用户是否已经发出了请求，防止多次请求带来的阻塞
+	@Autowired
+	private RedisTemplate<String, SpikeOrderVo> redisTemplateForSpikeOrderVo;
+
+
+	public static final SpikeOrder ORDER_FAILED = new SpikeOrder(-1L,null,null,null,null);
+
+	/**
+	 * 将下单信息存入 redis，flag == true 表示成功，flag == false 表示失败
+	 * @param spikeOrder
+	 * @param isSuccess
+	 */
+	public void saveSpikeOrder(SpikeOrder spikeOrder,boolean isSuccess){
+		if (isSuccess)
+			redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),spikeOrder,60*60*24, TimeUnit.SECONDS);
+		else
+			redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),ORDER_FAILED,60*60*24, TimeUnit.SECONDS);
+	}
+
+	/**
+	 * 取出下单信息
+	 * 1.若取出值为空表示还在队列，未对该请求进行处理。
+	 * 2.若取出值的 id 为 -1 表示处理失败
+	 * 3.其他情况为下单请求处理成功
+	 * @param spikeOrder
+	 * @return
+	 */
+	public SpikeOrder getSpikeOrder(SpikeOrder spikeOrder){
+		return redisTemplateForSpikeOrder.opsForValue().get(generateSpikeOrderKey(spikeOrder));
+	}
+
+	/**
+	 * 将下单请求存入 redis set，防止重复下单
+	 * @param spikeOrderVo
+	 * @return
+	 */
+	public boolean saveSpikeOrderVo(SpikeOrderVo spikeOrderVo){
+		return redisTemplateForSpikeOrderVo.opsForSet().add("spike_order_vo", spikeOrderVo) == 1;
+	}
+
+	/**
+	 * 从 redis set 中移除该订单
+	 * @param spikeOrderVo
+	 */
+	public void removeSpikeOrderVo(SpikeOrderVo spikeOrderVo){
+		redisTemplateForSpikeOrderVo.opsForSet().remove("spike_order_vo", spikeOrderVo);
+	}
+
+	private String generateSpikeOrderKey(SpikeOrder spikeOrder){
+		return "spikeOrder-userId:"+spikeOrder.getUserId()+"-spikeId:"+spikeOrder.getSpikeId();
+	}
+
+	/**
+	 * 预减库存，成功减少库存返回 true
+	 * @param spikeId
+	 * @return
+	 */
+	public boolean decrementStock(Long spikeId){
+		return redisTemplateForSpikeOrderPreDecrement.opsForHash().increment("spike" + spikeId, "stock", -1) >= 0;
+	}
+
+	/**
+	 * 库存加一
+	 * @param spikeId
+	 */
+	public void incrementStock(Long spikeId){
+		redisTemplateForSpikeOrderPreDecrement.opsForHash().increment("spike" + spikeId, "stock", 1);
+	}
+
+	/**
+	 * 保存商品部分信息（stock,price,startAt,endAt）到 redis
+	 * @param spike
+	 */
+	public void saveSpike(Spike spike){
+		HashMap<String, Object> stringObjectHashMap = new HashMap<>(3);
+		stringObjectHashMap.put("stock",spike.getStock());
+		stringObjectHashMap.put("price",spike.getPrice());
+		stringObjectHashMap.put("startAt",spike.getStartAt());
+		stringObjectHashMap.put("endAt",spike.getEndAt());
+		redisTemplateForSpike.opsForHash().putAll("spike"+spike.getId(),stringObjectHashMap);
+	}
+
+	/**
+	 * 取出商品部分信息（price,startAt,endAt）
+	 * @param spikeId
+	 * @return
+	 */
+	public Spike getSpike(Long spikeId){
+		// 从缓存取信息用于校验
+		ArrayList<Object> list = new ArrayList<>(3);
+		list.add("startAt");
+		list.add("endAt");
+		list.add("price");
+		List<Object> multiGet = redisTemplateForSpike.opsForHash().multiGet("spike" + spikeId,list);
+		Spike spike = new Spike();
+		spike.setStartAt((Date)multiGet.get(0));
+		spike.setEndAt((Date)multiGet.get(1));
+		spike.setPrice((BigDecimal)multiGet.get(2));
+		return spike;
+	}
 
 	/**
 	 * redis 根据 sessionId 读出 User
@@ -35,15 +146,26 @@ public class RedisService {
 	 * @return
 	 */
 	public User getUserBySessionId(String sessionId){
-		return redisTemplate.opsForValue().get(sessionId);
+		return redisTemplateForUser.opsForValue().get(sessionId);
 	}
 
 	/**
 	 * 刷新 redis session 的缓存存在时间
 	 * @param sessionId
 	 */
-	public void refreshMsgInRedis(String sessionId, int time){
-		redisTemplate.expire(sessionId,time, TimeUnit.SECONDS);
+	public void refreshUser(String sessionId, int time){
+		redisTemplateForUser.expire(sessionId,time, TimeUnit.SECONDS);
+	}
+
+	/**
+	 * 将用户存入 redis 并生成 sessionId
+	 * @param user
+	 * @return
+	 */
+	public String saveUserAndGenerateSessionId(User user){
+		String sessionId = UUID.randomUUID().toString().replace("-","");
+		redisTemplateForUser.opsForValue().set(sessionId, user, RedisConfig.EXPIRE_SECOND,TimeUnit.SECONDS);
+		return sessionId;
 	}
 
 	/**
@@ -51,20 +173,44 @@ public class RedisService {
 	 * @param user
 	 * @return
 	 */
-	public String saveUserAndGenerateSessionId(User user){
-		String sessionId = UUID.randomUUID().toString().replace("-","");
-		redisTemplate.opsForValue().set(sessionId, user, RedisConfig.EXPIRE_SECOND,TimeUnit.SECONDS);
+	public String saveUser(User user,String sessionId){
+		redisTemplateForUser.opsForValue().set(sessionId, user, RedisConfig.EXPIRE_SECOND,TimeUnit.SECONDS);
 		return sessionId;
 	}
-
 	/**
 	 * 刷新秒杀商品第一页缓存
 	 */
 	public void reCacheFirstPage(){
 		// System.out.println("刷新商品第一页缓存");
 		// 缓存商品第一页
-		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",spikeMapper.selectByPagination("DESC", 0, 10));
+		cacheFirstPage(spikeMapper.selectByPagination("DESC", 0, 10));
 		// 缓存总数
-		redisTemplateForInteger.opsForValue().set("count",spikeMapper.count());
+		cachePageCount(spikeMapper.count());
+	}
+
+	/**
+	 * 从 redis 移除 spike
+	 * @param spike
+	 */
+	public void removeSpike(Spike spike){
+		redisTemplateForSpike.opsForHash().delete("spike"+spike.getId(),"stock","startAt","endAt");
+	}
+
+	public void cacheFirstPage(List<Spike> firstPage){
+		// 缓存商品第一页
+		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",firstPage);
+	}
+
+	public List<Spike> getFirstPage(){
+		return redisTemplateForFirstPage.opsForValue().get("firstSpikePage");
+	}
+
+	public void cachePageCount(int i){
+		// 缓存总数
+		redisTemplateForSpike.opsForValue().set("count",i);
+	}
+
+	public Integer getPageCount(){
+		return (Integer)redisTemplateForSpike.opsForValue().get("count");
 	}
 }

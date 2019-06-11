@@ -1,8 +1,11 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.config.MQConfig;
+import com.moesome.spike.model.domain.User;
+import com.moesome.spike.model.pojo.vo.MailVo;
 import com.moesome.spike.model.pojo.vo.SpikeOrderVo;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.annotation.RabbitListeners;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +15,18 @@ public class MQReceiver {
 	@Autowired
 	private SpikeOrderService spikeOrderService;
 
-	@RabbitListener(queues = MQConfig.SPIKE_QUEUE)
-	public void receiveSpikeTopic(SpikeOrderVo spikeOrderVo){
+	@Autowired
+	private SendService sendService;
+	// 限制单线程处理
+	@RabbitListener(queues = MQConfig.SPIKE_QUEUE,concurrency = "1-1")
+	public void receiveSpike(SpikeOrderVo spikeOrderVo){
 		spikeOrderService.resolveOrder(spikeOrderVo);
+	}
+
+	@RabbitListener(queues = MQConfig.MAIL_QUEUE)
+	public void receiveMail(MailVo mailVo){
+		System.out.println("准备发送邮件");
+		sendService.resolveSendMail(mailVo);
 	}
 
 }

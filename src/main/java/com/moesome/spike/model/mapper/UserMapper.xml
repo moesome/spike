@@ -1,132 +1,143 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.moesome.spike.model.dao.UserMapper">
-    <resultMap id="BaseResultMap" type="com.moesome.spike.model.domain.User">
-        <!--@mbg.generated-->
-        <id column="id" jdbcType="BIGINT" property="id" />
-        <result column="username" jdbcType="VARCHAR" property="username" />
-        <result column="password" jdbcType="CHAR" property="password" />
-        <result column="nickname" jdbcType="VARCHAR" property="nickname" />
-        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
-        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
-        <result column="email" jdbcType="VARCHAR" property="email" />
-        <result column="phone" jdbcType="CHAR" property="phone" />
-    </resultMap>
-    <sql id="Base_Column_List">
-        <!--@mbg.generated-->
-        id, username, `password`, nickname, created_at, updated_at, email, phone
-    </sql>
-    <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
-        <!--@mbg.generated-->
-        select
-        <include refid="Base_Column_List" />
-        from user
-        where id = #{id,jdbcType=BIGINT}
-    </select>
-    <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
-        <!--@mbg.generated-->
-        delete from user
-        where id = #{id,jdbcType=BIGINT}
-    </delete>
-    <insert id="insert" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.User" useGeneratedKeys="true">
-        <!--@mbg.generated-->
-        insert into user (username, `password`, nickname,
-        created_at, updated_at, email,
-        phone)
-        values (#{username,jdbcType=VARCHAR}, #{password,jdbcType=CHAR}, #{nickname,jdbcType=VARCHAR},
-        #{createdAt,jdbcType=TIMESTAMP}, #{updatedAt,jdbcType=TIMESTAMP}, #{email,jdbcType=VARCHAR},
-        #{phone,jdbcType=CHAR})
-    </insert>
-    <insert id="insertSelective" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.User" useGeneratedKeys="true">
-        <!--@mbg.generated-->
-        insert into user
-        <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="username != null">
-                username,
-            </if>
-            <if test="password != null">
-                `password`,
-            </if>
-            <if test="nickname != null">
-                nickname,
-            </if>
-            <if test="createdAt != null">
-                created_at,
-            </if>
-            <if test="updatedAt != null">
-                updated_at,
-            </if>
-            <if test="email != null">
-                email,
-            </if>
-            <if test="phone != null">
-                phone,
-            </if>
-        </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="username != null">
-                #{username,jdbcType=VARCHAR},
-            </if>
-            <if test="password != null">
-                #{password,jdbcType=CHAR},
-            </if>
-            <if test="nickname != null">
-                #{nickname,jdbcType=VARCHAR},
-            </if>
-            <if test="createdAt != null">
-                #{createdAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="updatedAt != null">
-                #{updatedAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="email != null">
-                #{email,jdbcType=VARCHAR},
-            </if>
-            <if test="phone != null">
-                #{phone,jdbcType=CHAR},
-            </if>
-        </trim>
-    </insert>
-    <update id="updateByPrimaryKeySelective" parameterType="com.moesome.spike.model.domain.User">
-        <!--@mbg.generated-->
-        update user
-        <set>
-            <if test="username != null">
-                username = #{username,jdbcType=VARCHAR},
-            </if>
-            <if test="password != null">
-                `password` = #{password,jdbcType=CHAR},
-            </if>
-            <if test="nickname != null">
-                nickname = #{nickname,jdbcType=VARCHAR},
-            </if>
-            <if test="createdAt != null">
-                created_at = #{createdAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="updatedAt != null">
-                updated_at = #{updatedAt,jdbcType=TIMESTAMP},
-            </if>
-            <if test="email != null">
-                email = #{email,jdbcType=VARCHAR},
-            </if>
-            <if test="phone != null">
-                phone = #{phone,jdbcType=CHAR},
-            </if>
-        </set>
-        where id = #{id,jdbcType=BIGINT}
-    </update>
-    <update id="updateByPrimaryKey" parameterType="com.moesome.spike.model.domain.User">
-        <!--@mbg.generated-->
-        update user
-        set username = #{username,jdbcType=VARCHAR},
+  <resultMap id="BaseResultMap" type="com.moesome.spike.model.domain.User">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="username" jdbcType="VARCHAR" property="username" />
+    <result column="password" jdbcType="CHAR" property="password" />
+    <result column="nickname" jdbcType="VARCHAR" property="nickname" />
+    <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
+    <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
+    <result column="email" jdbcType="VARCHAR" property="email" />
+    <result column="phone" jdbcType="CHAR" property="phone" />
+    <result column="coin" jdbcType="DECIMAL" property="coin" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, username, `password`, nickname, created_at, updated_at, email, phone, coin
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    <!--@mbg.generated-->
+    select 
+    <include refid="Base_Column_List" />
+    from user
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    <!--@mbg.generated-->
+    delete from user
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.User" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into user (username, `password`, nickname, 
+      created_at, updated_at, email, 
+      phone, coin)
+    values (#{username,jdbcType=VARCHAR}, #{password,jdbcType=CHAR}, #{nickname,jdbcType=VARCHAR}, 
+      #{createdAt,jdbcType=TIMESTAMP}, #{updatedAt,jdbcType=TIMESTAMP}, #{email,jdbcType=VARCHAR}, 
+      #{phone,jdbcType=CHAR}, #{coin,jdbcType=DECIMAL})
+  </insert>
+  <insert id="insertSelective" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.User" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into user
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="username != null">
+        username,
+      </if>
+      <if test="password != null">
+        `password`,
+      </if>
+      <if test="nickname != null">
+        nickname,
+      </if>
+      <if test="createdAt != null">
+        created_at,
+      </if>
+      <if test="updatedAt != null">
+        updated_at,
+      </if>
+      <if test="email != null">
+        email,
+      </if>
+      <if test="phone != null">
+        phone,
+      </if>
+      <if test="coin != null">
+        coin,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="username != null">
+        #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null">
+        #{password,jdbcType=CHAR},
+      </if>
+      <if test="nickname != null">
+        #{nickname,jdbcType=VARCHAR},
+      </if>
+      <if test="createdAt != null">
+        #{createdAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updatedAt != null">
+        #{updatedAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="email != null">
+        #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null">
+        #{phone,jdbcType=CHAR},
+      </if>
+      <if test="coin != null">
+        #{coin,jdbcType=DECIMAL},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.moesome.spike.model.domain.User">
+    <!--@mbg.generated-->
+    update user
+    <set>
+      <if test="username != null">
+        username = #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null">
         `password` = #{password,jdbcType=CHAR},
+      </if>
+      <if test="nickname != null">
         nickname = #{nickname,jdbcType=VARCHAR},
+      </if>
+      <if test="createdAt != null">
         created_at = #{createdAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updatedAt != null">
         updated_at = #{updatedAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="email != null">
         email = #{email,jdbcType=VARCHAR},
-        phone = #{phone,jdbcType=CHAR}
-        where id = #{id,jdbcType=BIGINT}
-    </update>
+      </if>
+      <if test="phone != null">
+        phone = #{phone,jdbcType=CHAR},
+      </if>
+      <if test="coin != null">
+        coin = #{coin,jdbcType=DECIMAL},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.moesome.spike.model.domain.User">
+    <!--@mbg.generated-->
+    update user
+    set username = #{username,jdbcType=VARCHAR},
+      `password` = #{password,jdbcType=CHAR},
+      nickname = #{nickname,jdbcType=VARCHAR},
+      created_at = #{createdAt,jdbcType=TIMESTAMP},
+      updated_at = #{updatedAt,jdbcType=TIMESTAMP},
+      email = #{email,jdbcType=VARCHAR},
+      phone = #{phone,jdbcType=CHAR},
+      coin = #{coin,jdbcType=DECIMAL}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
     <select id="selectByUsername" resultMap="BaseResultMap">
         select * from user where username = #{username}
     </select>
@@ -180,6 +191,9 @@
         where
         user.id = #{userId}
     </select>
+    <update id="decrementCoinById">
+            update user set coin = coin - #{decrement,jdbcType=DECIMAL} where id = #{id,jdbcType=BIGINT} and coin >= #{decrement,jdbcType=DECIMAL};
+    </update>
 
 
 </mapper>

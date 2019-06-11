@@ -40,7 +40,9 @@ public class UserService {
 		user.setCreatedAt(date);
 		user.setUpdatedAt(date);
 		userMapper.insert(user);
-		return UserResult.OK_WITHOUT_BODY;
+		User returnUser = new User();
+		returnUser.setId(user.getId());
+		return new UserResult(SuccessCode.OK,returnUser);
 	}
 	// 密码在这里加密
 	private void transformUserVoToUser(UserVo userVo, User user){
@@ -64,7 +66,7 @@ public class UserService {
 			user.setUpdatedAt(new Date());
 			userMapper.updateByPrimaryKeySelective(user);
 			// 删除旧缓存
-			redisService.refreshMsgInRedis(sessionId,0);
+			redisService.refreshUser(sessionId,0);
 			// 创建新缓存
 			String s = redisService.saveUserAndGenerateSessionId(user);
 			// 设置新 cookie
@@ -89,6 +91,12 @@ public class UserService {
 		}
 	}
 
+	public Result delete(String sessionId,Long id){
+		// 校验 sessionId 是否为管理员（该功能为了测试方便暂时没有加）
+		userMapper.deleteByPrimaryKey(id);
+		redisService.refreshUser(sessionId,0);
+		return UserResult.OK_WITHOUT_BODY;
+	}
 
 	public User getUserByUserName(String username){
 		return userMapper.selectByUsername(username);

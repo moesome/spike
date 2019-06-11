@@ -54,7 +54,7 @@ public class AuthService {
 		if (user == null){
 			return AuthResult.AUTH_FAILED;
 		}
-		redisService.refreshMsgInRedis(sessionId,RedisConfig.EXPIRE_SECOND);
+		redisService.refreshUser(sessionId,RedisConfig.EXPIRE_SECOND);
 		commonService.setCookie(sessionId,httpServletResponse);
 		return new AuthResult(SuccessCode.OK,user);
 	}
@@ -62,7 +62,7 @@ public class AuthService {
 	public Result logout(String sessionId, HttpServletResponse httpServletResponse) {
 		if (!StringUtils.isEmpty(sessionId)){
 			commonService.setCookie("",httpServletResponse);
-			redisService.refreshMsgInRedis(sessionId,0);
+			redisService.refreshUser(sessionId,0);
 			return new AuthResult(SuccessCode.OK);
 		}else{
 			return AuthResult.AUTH_FAILED;

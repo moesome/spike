@@ -4,7 +4,7 @@
     <resultMap id="BaseResultMap" type="com.moesome.spike.model.domain.SpikeOrder">
         <!--@mbg.generated-->
         <id column="id" jdbcType="BIGINT" property="id" />
-        <result column="user_id" jdbcType="INTEGER" property="userId" />
+        <result column="user_id" jdbcType="BIGINT" property="userId" />
         <result column="spike_id" jdbcType="BIGINT" property="spikeId" />
         <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
         <result column="status" jdbcType="TINYINT" property="status" />
@@ -29,7 +29,7 @@
         <!--@mbg.generated-->
         insert into spike_order (user_id, spike_id, created_at,
         `status`)
-        values (#{userId,jdbcType=INTEGER}, #{spikeId,jdbcType=BIGINT}, #{createdAt,jdbcType=TIMESTAMP},
+        values (#{userId,jdbcType=BIGINT}, #{spikeId,jdbcType=BIGINT}, #{createdAt,jdbcType=TIMESTAMP},
         #{status,jdbcType=TINYINT})
     </insert>
     <insert id="insertSelective" keyColumn="id" keyProperty="id" parameterType="com.moesome.spike.model.domain.SpikeOrder" useGeneratedKeys="true">
@@ -51,7 +51,7 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">
-                #{userId,jdbcType=INTEGER},
+                #{userId,jdbcType=BIGINT},
             </if>
             <if test="spikeId != null">
                 #{spikeId,jdbcType=BIGINT},
@@ -69,7 +69,7 @@
         update spike_order
         <set>
             <if test="userId != null">
-                user_id = #{userId,jdbcType=INTEGER},
+                user_id = #{userId,jdbcType=BIGINT},
             </if>
             <if test="spikeId != null">
                 spike_id = #{spikeId,jdbcType=BIGINT},
@@ -86,7 +86,7 @@
     <update id="updateByPrimaryKey" parameterType="com.moesome.spike.model.domain.SpikeOrder">
         <!--@mbg.generated-->
         update spike_order
-        set user_id = #{userId,jdbcType=INTEGER},
+        set user_id = #{userId,jdbcType=BIGINT},
         spike_id = #{spikeId,jdbcType=BIGINT},
         created_at = #{createdAt,jdbcType=TIMESTAMP},
         `status` = #{status,jdbcType=TINYINT}
@@ -110,7 +110,7 @@
         where spike_order.user_id = #{userId} order by spike_order.id ${order} limit #{start},#{count}
     </select>
     <select id="countByUserId" resultType="java.lang.Integer">
-        select count(*) from spike_order where user_id = #{userId,jdbcType=INTEGER}
+        select count(*) from spike_order where user_id = #{userId,jdbcType=BIGINT}
     </select>
     <select id="selectSpikeOwnerIdBySpikeOrderId" resultType="java.lang.Long">
         select
@@ -128,4 +128,8 @@
         where
             spike_order.id = #{spikeId,jdbcType=BIGINT}
     </select>
+    <delete id="deleteByUserIdAndSpikeId">
+        delete from spike_order
+        where user_id = #{userId} and spike.spike_order.spike_id = #{spikeId}
+    </delete>
 </mapper>

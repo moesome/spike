@@ -7,12 +7,16 @@ import com.moesome.spike.model.dao.UserMapper;
 import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.result.SendResult;
+import com.moesome.spike.model.pojo.vo.MailVo;
 import com.moesome.spike.model.pojo.vo.SendVo;
 import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
 import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.model.pojo.result.SpikeOrderResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +35,11 @@ public class SendService {
 	@Autowired
 	private UserMapper userMapper;
 
+	@Autowired
+	private MQSender mqSender;
+
+	@Autowired
+	private JavaMailSender javaMailSender;
 
 	public Result remindToSendProduction(User user, Long spikeOrderId) {
 		if (user == null)
@@ -45,11 +54,14 @@ public class SendService {
 				// 改变订单状态
 				SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
 				spikeOrderToChangeStatus.setId(spikeOrderId);
-				spikeOrderToChangeStatus.setStatus((byte) 4);
+				spikeOrderToChangeStatus.setStatus((byte) 2);
 				spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
-
-				// 发送邮件通知作者发货（还未实现）
-				// 邮件包含收获者邮箱，和发货确认链接
+				// 发送邮件通知作者发货
+				MailVo mailVo = new MailVo();
+				mailVo.setTitle("发货提醒");
+				mailVo.setTo(spikeAndUserContactWayBySpikeId.getEmail());
+				mailVo.setMsg("用户"+user.getUsername()+"提醒您及时发送礼物");
+				mqSender.sendToEmailTopic(mailVo);
 				return SendResult.NOTICE_SUCCESS;
 			}else{
 				return SendResult.WRONG_REQUEST;
@@ -77,11 +89,42 @@ public class SendService {
 		if (spikeOrderOwnerId.equals(user.getId())){
 			SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
 			spikeOrderToChangeStatus.setId(spikeOrderId);
-			spikeOrderToChangeStatus.setStatus((byte) 5);
+			spikeOrderToChangeStatus.setStatus((byte) 3);
 			spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
 			return SendResult.NOTICE_SUCCESS;
 		}else{
 			return AuthResult.UNAUTHORIZED;
 		}
+	}
+
+	public Result receivedProduction(User user, Long spikeOrderId){
+		if (user == null)
+			return AuthResult.UNAUTHORIZED;
+		Long spikeOrderOwnerId = spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
+		if (spikeOrderOwnerId.equals(user.getId())){
+			SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
+			spikeOrderToChangeStatus.setId(spikeOrderId);
+			spikeOrderToChangeStatus.setStatus((byte) 4);
+			spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
+			return SendResult.NOTICE_SUCCESS;
+		}else{
+			return AuthResult.UNAUTHORIZED;
+		}
+	}
+
+	public void sendMail(MailVo mailVo){
+		mqSender.sendToEmailTopic(mailVo);
+	}
+
+	// 发送邮件操作耗时，扔给线程池处理，避免占用了过多的消费者数使得其他消费者无法得到执行
+	@Async
+	void resolveSendMail(MailVo mailVo){
+		System.out.println("处理邮件");
+		SimpleMailMessage message = new SimpleMailMessage();
+		message.setFrom("contact@mail.moesome.com");
+		message.setTo(mailVo.getTo());
+		message.setSubject(mailVo.getTitle());
+		message.setText(mailVo.getMsg());
+		javaMailSender.send(message);
 	}
 }

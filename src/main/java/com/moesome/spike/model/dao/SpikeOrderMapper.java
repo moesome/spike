@@ -8,6 +8,8 @@ import java.util.List;
 public interface SpikeOrderMapper {
     int deleteByPrimaryKey(Long id);
 
+    int deleteByUserIdAndSpikeId(Long userId, Long spikeId);
+
     int insert(SpikeOrder record);
 
     int insertSelective(SpikeOrder record);

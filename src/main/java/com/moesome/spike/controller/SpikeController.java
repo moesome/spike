@@ -39,6 +39,11 @@ public class SpikeController implements InitializingBean {
 		return spikeService.update(user,spikeVo,id);
 	}
 
+	@DeleteMapping("/spikes/{id}")
+	public Result delete(User user, @PathVariable Long id){
+		return spikeService.delete(user,id);
+	}
+
 	@Override
 	public void afterPropertiesSet(){
 		spikeService.init();
