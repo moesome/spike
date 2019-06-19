@@ -31,3 +31,4 @@ application.properties
 .vscode/
 
 springboot.log.*
+*.jks

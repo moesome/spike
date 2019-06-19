@@ -17,8 +17,8 @@ public class MQReceiver {
 
 	@Autowired
 	private SendService sendService;
-	// 限制单线程处理
-	@RabbitListener(queues = MQConfig.SPIKE_QUEUE,concurrency = "1-1")
+
+	@RabbitListener(queues = MQConfig.SPIKE_QUEUE)
 	public void receiveSpike(SpikeOrderVo spikeOrderVo){
 		spikeOrderService.resolveOrder(spikeOrderVo);
 	}

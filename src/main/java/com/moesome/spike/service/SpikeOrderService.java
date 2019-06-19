@@ -99,6 +99,7 @@ public class SpikeOrderService {
 				return OrderResult.REQUEST_ERR;
 			}
 		}
+		// 使用队列削峰，快速返回结果——“排队中”
 		// 免费商品直接加入队列
 		orderAndDecrementStock(spikeOrderVo);
 		return new OrderResult(SuccessCode.OK);
@@ -119,6 +120,7 @@ public class SpikeOrderService {
 	 * @param spikeOrderVo
 	 */
 	void resolveOrder(SpikeOrderVo spikeOrderVo){
+		tryLock(spikeOrderVo.getSpikeId());
 		try{
 			transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 				@Override
@@ -151,7 +153,7 @@ public class SpikeOrderService {
 						redisManager.reCacheFirstPage();
 				}
 			});
-			// 捕获重复下单异常
+		// 捕获重复下单异常
 		}catch (DuplicateKeyException e){
 			System.out.println("与唯一索引冲突");
 			// 与 resolverOrderFailed 区别是这里仍然需要禁止重复下单
@@ -163,8 +165,22 @@ public class SpikeOrderService {
 			// 设置订单失败轮询消息 4
 			redisManager.saveSpikeOrder(spikeOrder,false);
 		}catch (Exception e){
-//			e.printStackTrace();
 			resolverOrderFailed(spikeOrderVo);
+		}finally {
+			redisManager.unlockSpike(spikeOrderVo.getSpikeId());
+		}
+	}
+
+	private void tryLock(Long spikeId) {
+		while (true){
+			if(redisManager.lockSpike(spikeId)){
+				return;
+			}
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

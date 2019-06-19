@@ -56,7 +56,7 @@ public class TestController {
 			}
 			list.add(sessionId);
 		}
-
+		bufferedWriter.close();
 		return list;
 	}
 

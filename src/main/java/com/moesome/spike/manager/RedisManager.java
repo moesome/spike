@@ -235,4 +235,12 @@ public class RedisManager {
 	public Integer getPageCount(){
 		return (Integer)redisTemplateForSpike.opsForValue().get("pageCount");
 	}
+
+	public Boolean lockSpike(Long spikeId){
+		return redisTemplateForSpike.opsForValue().setIfAbsent("lock:spike-"+spikeId,true,10,TimeUnit.SECONDS);
+	}
+
+	public Boolean unlockSpike(Long spikeId){
+		return redisTemplateForSpike.delete("lock:spike-"+spikeId);
+	}
 }
