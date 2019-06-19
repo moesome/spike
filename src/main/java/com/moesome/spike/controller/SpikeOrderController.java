@@ -2,6 +2,7 @@ package com.moesome.spike.controller;
 
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.result.Result;
+import com.moesome.spike.model.pojo.vo.SpikeOrderAndSpikeVo;
 import com.moesome.spike.model.pojo.vo.SpikeOrderVo;
 import com.moesome.spike.service.SpikeOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,5 +28,10 @@ public class SpikeOrderController {
 	@GetMapping("/spike_orders/check/{spikeId}")
 	public Result check(User user, @PathVariable Long spikeId){
 		return spikeOrderService.check(user,spikeId);
+	}
+
+//	@DeleteMapping("/spike_orders/{id}")
+	public Result delete(User user, @PathVariable Long id, SpikeOrderAndSpikeVo spikeOrderAndSpikeVo){
+		return spikeOrderService.delete(user,id,spikeOrderAndSpikeVo.getSpikeId());
 	}
 }

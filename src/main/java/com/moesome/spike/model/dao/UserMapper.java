@@ -16,6 +16,8 @@ public interface UserMapper {
 
 	int decrementCoinById(BigDecimal decrement, Long id);
 
+	int incrementCoinById(BigDecimal increment, Long id);
+
 	int updateByPrimaryKeySelective(User record);
 
 	int updateByPrimaryKey(User record);

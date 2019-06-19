@@ -1,4 +1,4 @@
-package com.moesome.spike.service;
+package com.moesome.spike.manager;
 
 import com.moesome.spike.config.RedisConfig;
 import com.moesome.spike.model.dao.SpikeMapper;
@@ -7,6 +7,7 @@ import com.moesome.spike.model.domain.SpikeOrder;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.vo.SpikeOrderVo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * 存放公用 redis 操作
  */
 @Service
-public class RedisService {
+public class RedisManager {
 	@Autowired
 	private RedisTemplate<String, User> redisTemplateForUser;
 
@@ -40,22 +41,39 @@ public class RedisService {
 	private RedisTemplate<String, SpikeOrder> redisTemplateForSpikeOrder;
 
 	// 校验用户是否已经发出了请求，防止多次请求带来的阻塞
+	@Qualifier("redisTemplate")
 	@Autowired
-	private RedisTemplate<String, SpikeOrderVo> redisTemplateForSpikeOrderVo;
+	private RedisTemplate<String, String> redisTemplateForSpikeOrderVo;
+
+	@Autowired
+	private RedisTemplate<String,Long> redisTemplateForRechargeId;
 
 
-	public static final SpikeOrder ORDER_FAILED = new SpikeOrder(-1L,null,null,null,null);
+	public static final SpikeOrder ORDER_FAILED = new SpikeOrder(-1L,null,null,null,null,null);
+
+	public boolean saveRechargeId(Long id){
+		return redisTemplateForRechargeId.opsForSet().add("rechargeId",id) == 1;
+	}
+
+	public void removeRechargeId(Long id){
+		redisTemplateForRechargeId.opsForSet().remove("rechargeId",id);
+	}
 
 	/**
-	 * 将下单信息存入 redis，flag == true 表示成功，flag == false 表示失败
+	 * 将下单信息存入 redis，flag == true 表示成功，flag == false 表示失败，用于客户端轮询检测下单结果
 	 * @param spikeOrder
 	 * @param isSuccess
 	 */
 	public void saveSpikeOrder(SpikeOrder spikeOrder,boolean isSuccess){
 		if (isSuccess)
-			redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),spikeOrder,60*60*24, TimeUnit.SECONDS);
+			redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),spikeOrder,60*60, TimeUnit.SECONDS);
 		else
-			redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),ORDER_FAILED,60*60*24, TimeUnit.SECONDS);
+			redisTemplateForSpikeOrder.opsForValue().set(generateSpikeOrderKey(spikeOrder),ORDER_FAILED,60*60, TimeUnit.SECONDS);
+	}
+
+
+	public void removeSpikeOrder(SpikeOrder spikeOrder){
+		redisTemplateForSpikeOrder.expire(generateSpikeOrderKey(spikeOrder),0, TimeUnit.SECONDS);
 	}
 
 	/**
@@ -76,7 +94,7 @@ public class RedisService {
 	 * @return
 	 */
 	public boolean saveSpikeOrderVo(SpikeOrderVo spikeOrderVo){
-		return redisTemplateForSpikeOrderVo.opsForSet().add("spike_order_vo", spikeOrderVo) == 1;
+		return redisTemplateForSpikeOrderVo.opsForSet().add("spike_order_vo", generateSpikeOrderVoValue(spikeOrderVo)) == 1;
 	}
 
 	/**
@@ -84,7 +102,11 @@ public class RedisService {
 	 * @param spikeOrderVo
 	 */
 	public void removeSpikeOrderVo(SpikeOrderVo spikeOrderVo){
-		redisTemplateForSpikeOrderVo.opsForSet().remove("spike_order_vo", spikeOrderVo);
+		redisTemplateForSpikeOrderVo.opsForSet().remove("spike_order_vo", generateSpikeOrderVoValue(spikeOrderVo));
+	}
+
+	private String generateSpikeOrderVoValue(SpikeOrderVo spikeOrderVo){
+		return "spikeOrder-userId:"+spikeOrderVo.getUserId()+"spikeOrder-spikeId:"+spikeOrderVo.getSpikeId();
 	}
 
 	private String generateSpikeOrderKey(SpikeOrder spikeOrder){
@@ -109,7 +131,7 @@ public class RedisService {
 	}
 
 	/**
-	 * 保存商品部分信息（stock,price,startAt,endAt）到 redis
+	 * 保存商品部分信息（stock,price,startAt,endAt）到 redis，用于下单前检测
 	 * @param spike
 	 */
 	public void saveSpike(Spike spike){
@@ -207,10 +229,10 @@ public class RedisService {
 
 	public void cachePageCount(int i){
 		// 缓存总数
-		redisTemplateForSpike.opsForValue().set("count",i);
+		redisTemplateForSpike.opsForValue().set("pageCount",i);
 	}
 
 	public Integer getPageCount(){
-		return (Integer)redisTemplateForSpike.opsForValue().get("count");
+		return (Integer)redisTemplateForSpike.opsForValue().get("pageCount");
 	}
 }

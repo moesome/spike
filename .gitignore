@@ -29,3 +29,5 @@ application.properties
 
 ### VS Code ###
 .vscode/
+
+springboot.log.*

@@ -14,6 +14,7 @@ public class SendResult extends Result<List<SendVo>>{
 
 	public static final SendResult NOTICE_SUCCESS = new SendResult(SuccessCode.OK);
 	public static final SendResult WRONG_REQUEST = new SendResult(ErrorCode.REQUEST_ERR);
+	public static final SendResult NOTICE_ERROR = new SendResult(ErrorCode.FAILED);
 
 	public SendResult(Code code) {
 		super(code);

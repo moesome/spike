@@ -14,5 +14,6 @@ public class SpikeOrderVo {
 	private Long userId;
 	@NotNull
 	private Long spikeId;
+	// 用于在订单处理失败回滚时候给缓存中用户的金币回滚
 	private String sessionId;
 }

@@ -1,23 +1,19 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
-import com.moesome.spike.model.dao.SpikeMapper;
+import com.moesome.spike.manager.RedisManager;
 import com.moesome.spike.model.dao.UserMapper;
-import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.pojo.vo.SendVo;
 import com.moesome.spike.model.pojo.vo.UserVo;
 import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.model.pojo.result.UserResult;
 import com.moesome.spike.util.EncryptUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Date;
-import java.util.List;
 
 @Service
 public class UserService {
@@ -28,7 +24,7 @@ public class UserService {
 	private UserMapper userMapper;
 
 	@Autowired
-	private RedisService redisService;
+	private RedisManager redisManager;
 
 	public Result store(UserVo userVo){
 		Long i = userMapper.selectIdByUsername(userVo.getUsername());
@@ -44,7 +40,7 @@ public class UserService {
 		returnUser.setId(user.getId());
 		return new UserResult(SuccessCode.OK,returnUser);
 	}
-	// 密码在这里加密
+	// 密码在这一步之后已经加密
 	private void transformUserVoToUser(UserVo userVo, User user){
 		user.setUsername(userVo.getUsername());
 		user.setNickname(userVo.getNickname());
@@ -57,7 +53,7 @@ public class UserService {
 		user.setPhone(userVo.getPhone());
 	}
 
-	public Result update(String sessionId, User user, UserVo userVo, Long id, HttpServletResponse httpServletResponse) {
+	public Result update(String sessionId, User user, UserVo userVo, Long id) {
 		if (user == null)
 			return AuthResult.UNAUTHORIZED;
 		// 判断传入用户是否和缓存中相等
@@ -66,13 +62,9 @@ public class UserService {
 			user.setUpdatedAt(new Date());
 			userMapper.updateByPrimaryKeySelective(user);
 			// 删除旧缓存
-			redisService.refreshUser(sessionId,0);
-			// 创建新缓存
-			String s = redisService.saveUserAndGenerateSessionId(user);
-			// 设置新 cookie
-			commonService.setCookie(s,httpServletResponse);
+			redisManager.saveUser(user,sessionId);
 			// 刷新第一页（第一页用户名可能会变）
-			redisService.reCacheFirstPage();
+			redisManager.reCacheFirstPage();
 			return new UserResult(SuccessCode.OK,user);
 		}else{
 			return AuthResult.AUTH_FAILED;
@@ -80,21 +72,22 @@ public class UserService {
 	}
 
 
-	public Result show(User user, Long id) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
-		// 判断传入用户是否和缓存中相等
-		if (user.getId().equals(id)) {
+	public Result show(User user,String sessionId) {
+		User userInDB = userMapper.selectByPrimaryKey(user.getId());
+		if (userInDB.equals(user)){
 			return new UserResult(SuccessCode.OK,user);
 		}else{
-			return AuthResult.AUTH_FAILED;
+			// 刷新缓存
+			redisManager.saveUser(userInDB,sessionId);
+			return new UserResult(SuccessCode.OK,userInDB);
 		}
+
 	}
 
 	public Result delete(String sessionId,Long id){
 		// 校验 sessionId 是否为管理员（该功能为了测试方便暂时没有加）
 		userMapper.deleteByPrimaryKey(id);
-		redisService.refreshUser(sessionId,0);
+		redisManager.refreshUser(sessionId,0);
 		return UserResult.OK_WITHOUT_BODY;
 	}
 

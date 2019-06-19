@@ -194,6 +194,9 @@
     <update id="decrementCoinById">
             update user set coin = coin - #{decrement,jdbcType=DECIMAL} where id = #{id,jdbcType=BIGINT} and coin >= #{decrement,jdbcType=DECIMAL};
     </update>
+    <update id="incrementCoinById">
+            update user set coin = coin + #{increment,jdbcType=DECIMAL} where id = #{id,jdbcType=BIGINT} ;
+    </update>
 
 
 </mapper>

@@ -38,8 +38,8 @@ public class SpikeController implements InitializingBean {
 	public Result update(User user, @PathVariable Long id,@RequestBody @Validated SpikeVo spikeVo){
 		return spikeService.update(user,spikeVo,id);
 	}
-
-	@DeleteMapping("/spikes/{id}")
+	// 暂未开放
+	//@DeleteMapping("/spikes/{id}")
 	public Result delete(User user, @PathVariable Long id){
 		return spikeService.delete(user,id);
 	}

@@ -2,6 +2,7 @@ package com.moesome.spike.model.pojo.result;
 
 import com.moesome.spike.exception.message.Code;
 import com.moesome.spike.exception.message.ErrorCode;
+import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.domain.Order;
 
 public class OrderResult extends Result<Order> {
@@ -13,6 +14,7 @@ public class OrderResult extends Result<Order> {
 	public static final OrderResult IN_QUEUE = new OrderResult(ErrorCode.IN_QUEUE);
 	public static final OrderResult FAILED = new OrderResult(ErrorCode.FAILED);
 	public static final OrderResult REPEATED_REQUEST = new OrderResult(ErrorCode.REPEATED_REQUEST);
+	public static final OrderResult OK_WITHOUT_BODY = new OrderResult(SuccessCode.OK);
 
 
 	public OrderResult(Code code) {

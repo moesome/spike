@@ -1,17 +1,15 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.manager.RedisManager;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.domain.Spike;
 import com.moesome.spike.model.domain.User;
-import com.moesome.spike.model.pojo.result.ExceptionResult;
-import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
 import com.moesome.spike.model.pojo.vo.SpikeVo;
 import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.model.pojo.result.SpikeResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,7 +26,7 @@ public class SpikeService {
 	private SpikeMapper spikeMapper;
 
 	@Autowired
-	private RedisService redisService;
+	private RedisManager redisManager;
 	/**
 	 * 优化秒杀，将秒杀要用到的一些参数写入缓存，如果这些值能通过验证再写入数据库
 	 */
@@ -38,16 +36,16 @@ public class SpikeService {
 		int i = 0;//计数
 		for (Spike spike : spikes){
 			// 缓存秒杀验证数据
-			redisService.saveSpike(spike);
+			redisManager.saveSpike(spike);
 			if (i + 10 >= spikes.size()){
 				firstPage.push(spike);
 			}
 			i++;
 		}
 		// 缓存商品第一页
-		redisService.cacheFirstPage(firstPage);
+		redisManager.cacheFirstPage(firstPage);
 		// 缓存总数
-		redisService.cachePageCount(i);
+		redisManager.cachePageCount(i);
 	}
 
 	public Result index(String order, int page){
@@ -57,8 +55,8 @@ public class SpikeService {
 		Integer count;
 		if (o.equals("DESC") && p == 1){
 			// 返回缓存
-			spikeList = redisService.getFirstPage();
-			count = redisService.getPageCount();
+			spikeList = redisManager.getFirstPage();
+			count = redisManager.getPageCount();
 			// 缓存有效直接返回
 			if (spikeList != null && count != null){
 				// System.out.println("查缓存第一页");
@@ -101,8 +99,8 @@ public class SpikeService {
 		spike.setUserId(user.getId());
 		transformSpikeVoMessageToSpike(spikeVo,spike);
 		spikeMapper.insertSelective(spike);
-		redisService.saveSpike(spike);
-		redisService.reCacheFirstPage();
+		redisManager.saveSpike(spike);
+		redisManager.reCacheFirstPage();
 		ArrayList<Spike> arrayList = new ArrayList<>(1);
 		arrayList.add(spike);
 		return new SpikeResult(SuccessCode.OK,arrayList,1);
@@ -135,8 +133,8 @@ public class SpikeService {
 			spike.setUpdatedAt(new Date());
 			transformSpikeVoMessageToSpike(spikeVo,spike);
 			spikeMapper.updateByPrimaryKeySelective(spike);
-			redisService.saveSpike(spike);
-			redisService.reCacheFirstPage();
+			redisManager.saveSpike(spike);
+			redisManager.reCacheFirstPage();
 			return SpikeResult.OK_WITHOUT_BODY;
 		}else{
 			return AuthResult.AUTH_FAILED;
@@ -151,9 +149,9 @@ public class SpikeService {
 			// 删除数据库
 			spikeMapper.deleteByPrimaryKey(id);
 			// 删除 redis
-			redisService.removeSpike(spike);
+			redisManager.removeSpike(spike);
 			// 刷新第一页缓存
-			redisService.reCacheFirstPage();
+			redisManager.reCacheFirstPage();
 			return SpikeResult.OK_WITHOUT_BODY;
 		}else{
 			return AuthResult.AUTH_FAILED;

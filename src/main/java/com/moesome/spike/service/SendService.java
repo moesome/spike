@@ -18,7 +18,11 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -40,6 +44,9 @@ public class SendService {
 
 	@Autowired
 	private JavaMailSender javaMailSender;
+
+	@Autowired
+	private TransactionTemplate transactionTemplate;
 
 	public Result remindToSendProduction(User user, Long spikeOrderId) {
 		if (user == null)
@@ -105,12 +112,28 @@ public class SendService {
 			SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
 			spikeOrderToChangeStatus.setId(spikeOrderId);
 			spikeOrderToChangeStatus.setStatus((byte) 4);
-			spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
+			try{
+				transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+					@Override
+					protected void doInTransactionWithoutResult(TransactionStatus status) {
+						// 更新订单状态
+						spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
+						// 查询订单金币
+						BigDecimal price = spikeOrderMapper.selectPriceByPrimaryKey(spikeOrderId);
+						// 增加创建者金币
+						userMapper.incrementCoinById(price,user.getId());
+					}
+				});
+			}catch (Exception e){
+				return SendResult.NOTICE_ERROR;
+			}
 			return SendResult.NOTICE_SUCCESS;
 		}else{
 			return AuthResult.UNAUTHORIZED;
 		}
 	}
+
+
 
 	public void sendMail(MailVo mailVo){
 		mqSender.sendToEmailTopic(mailVo);

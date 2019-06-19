@@ -1,8 +1,8 @@
 package com.moesome.spike.model.domain;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,19 +10,26 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SpikeOrder implements Order{
-    private Long id;
+public class SpikeOrder implements Order {
+	private Long id;
 
-    private Long userId;
+	/**
+	 * 消费者 id
+	 */
+	private Long userId;
 
-    private Long spikeId;
+	private Long spikeId;
 
-    private Date createdAt;
+	private Date createdAt;
 
-    /**
-    * 1.正常
-2.用户取消
-3.所有者取消
-    */
-    private Byte status;
+	/**
+	 * 1.待发货
+	 * 2.用户催单
+	 * 3.所有者已发送奖品
+	 * 4.完成订单
+	 * 5.订单异常
+	 */
+	private Byte status;
+
+	private BigDecimal price;
 }

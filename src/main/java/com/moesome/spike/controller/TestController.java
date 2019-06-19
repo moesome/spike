@@ -2,7 +2,7 @@ package com.moesome.spike.controller;
 
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.vo.UserVo;
-import com.moesome.spike.service.RedisService;
+import com.moesome.spike.manager.RedisManager;
 import com.moesome.spike.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -20,7 +20,7 @@ public class TestController {
 	private UserService userService;
 
 	@Autowired
-	private RedisService redisService;
+	private RedisManager redisManager;
 
 	@Autowired
 	private RedisTemplate<String,User> redisTemplate;

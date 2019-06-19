@@ -1,6 +1,9 @@
 package com.moesome.spike.controller;
 
+import com.alipay.api.AlipayClient;
+import com.alipay.api.DefaultAlipayClient;
 import com.moesome.spike.model.domain.User;
+import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.vo.UserVo;
 import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.service.UserService;
@@ -16,8 +19,13 @@ public class UserController {
 	private UserService userService;
 
 	@GetMapping("/users/{id}")
-	public Result show(User user,@PathVariable Long id){
-		return userService.show(user,id);
+	public Result show(@CookieValue(required = false) String sessionId, User user,@PathVariable Long id){
+		if (user == null)
+			return AuthResult.UNAUTHORIZED;
+		if (!user.getId().equals(id)) {
+			return AuthResult.AUTH_FAILED;
+		}
+		return userService.show(user,sessionId);
 	}
 
 	@PostMapping("/users")
@@ -26,8 +34,8 @@ public class UserController {
 	}
 
 	@PatchMapping("users/{id}")
-	public Result update(@CookieValue(required = false) String sessionId, User user, @PathVariable Long id, @RequestBody @Validated UserVo userVo, HttpServletResponse httpServletResponse){
-		return userService.update(sessionId,user,userVo,id,httpServletResponse);
+	public Result update(@CookieValue(required = false) String sessionId, User user, @PathVariable Long id, @RequestBody @Validated UserVo userVo){
+		return userService.update(sessionId,user,userVo,id);
 	}
 
 	public Result delete(String sessionId,Long id){

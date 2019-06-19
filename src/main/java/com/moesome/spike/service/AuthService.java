@@ -2,6 +2,7 @@ package com.moesome.spike.service;
 
 import com.moesome.spike.config.RedisConfig;
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.manager.RedisManager;
 import com.moesome.spike.model.dao.UserMapper;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.result.AuthResult;
@@ -9,14 +10,10 @@ import com.moesome.spike.model.pojo.vo.AuthVo;
 import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.util.EncryptUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class AuthService {
@@ -27,7 +24,7 @@ public class AuthService {
 	private UserMapper userMapper;
 
 	@Autowired
-	private RedisService redisService;
+	private RedisManager redisManager;
 
 	public Result login(AuthVo authVo, HttpServletResponse httpServletResponse){
 		String client = EncryptUtil.md5(authVo.getPassword());
@@ -40,7 +37,7 @@ public class AuthService {
 			return AuthResult.USERNAME_OR_PASSWORD_ERR;
 		}
 		// 存入 redis
-		String sessionId = redisService.saveUserAndGenerateSessionId(user);
+		String sessionId = redisManager.saveUserAndGenerateSessionId(user);
 		// 返回 cookie
 		commonService.setCookie(sessionId,httpServletResponse);
 		return new AuthResult(SuccessCode.OK,user);
@@ -50,11 +47,11 @@ public class AuthService {
 		if (StringUtils.isEmpty(sessionId)){
 			return AuthResult.AUTH_FAILED;
 		}
-		User user = redisService.getUserBySessionId(sessionId);
+		User user = redisManager.getUserBySessionId(sessionId);
 		if (user == null){
 			return AuthResult.AUTH_FAILED;
 		}
-		redisService.refreshUser(sessionId,RedisConfig.EXPIRE_SECOND);
+		redisManager.refreshUser(sessionId,RedisConfig.EXPIRE_SECOND);
 		commonService.setCookie(sessionId,httpServletResponse);
 		return new AuthResult(SuccessCode.OK,user);
 	}
@@ -62,7 +59,7 @@ public class AuthService {
 	public Result logout(String sessionId, HttpServletResponse httpServletResponse) {
 		if (!StringUtils.isEmpty(sessionId)){
 			commonService.setCookie("",httpServletResponse);
-			redisService.refreshUser(sessionId,0);
+			redisManager.refreshUser(sessionId,0);
 			return new AuthResult(SuccessCode.OK);
 		}else{
 			return AuthResult.AUTH_FAILED;
