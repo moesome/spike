@@ -184,14 +184,15 @@
         where
             spike.id = #{spikeId,jdbcType=BIGINT}
     </select>
-  <select id="selectPriceByPrimaryKey" resultType="java.math.BigDecimal">
-    select
-        price
-    from
-        spike
-    where
-        id = #{id,jdbcType=BIGINT}
-  </select>
+    <select id="selectPriceAndStockByPrimaryKey"
+            resultType="com.moesome.spike.model.pojo.vo.SpikePriceAndStockVo">
+        select
+            price,stock
+        from
+            spike
+        where
+            id = #{id,jdbcType=BIGINT}
+    </select>
 
 
 </mapper>

@@ -1,6 +1,7 @@
 package com.moesome.spike.model.dao;
 
 import com.moesome.spike.model.domain.Spike;import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
+import com.moesome.spike.model.pojo.vo.SpikePriceAndStockVo;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,7 +15,7 @@ public interface SpikeMapper {
 
 	Spike selectByPrimaryKey(Long id);
 
-	BigDecimal selectPriceByPrimaryKey(Long id);
+	SpikePriceAndStockVo selectPriceAndStockByPrimaryKey(Long id);
 
 	int updateByPrimaryKeySelective(Spike record);
 

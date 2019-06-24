@@ -19,6 +19,7 @@ public enum ErrorCode implements Code{
 	TIME_LIMIT_NOT_ARRIVED(-511,"未到达开始时间"),
 	IN_QUEUE(-512,"请求在队列中"),
 	FAILED(-513,"请求失败"),
+	TIME_NOT_ALLOW(-514,"未在指定时间内"),
 	;
 
 	private int code;

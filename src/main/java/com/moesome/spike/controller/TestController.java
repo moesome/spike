@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ public class TestController {
 		if (test0 != null)
 			return "生成失败，请先删除所有测试用户";
 		for (int i = 0;i < 3000;i++){
-			UserVo userVo = new UserVo("测试"+i,"测试名"+i,"c4ca4238a0b923820dcc509a6f75849b","test"+i+"@qq.com","12345678911");
+			UserVo userVo = new UserVo("测试"+i,"测试名"+i,"c4ca4238a0b923820dcc509a6f75849b","test"+i+"@qq.com","12345678911", BigDecimal.ZERO);
 			userService.store(userVo);
 		}
 		return "生成成功";

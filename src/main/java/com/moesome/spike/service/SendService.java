@@ -94,34 +94,14 @@ public class SendService {
 			return AuthResult.UNAUTHORIZED;
 		Long spikeOrderOwnerId = spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
 		if (spikeOrderOwnerId.equals(user.getId())){
-			SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
-			spikeOrderToChangeStatus.setId(spikeOrderId);
-			spikeOrderToChangeStatus.setStatus((byte) 3);
-			spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
-			return SendResult.NOTICE_SUCCESS;
-		}else{
-			return AuthResult.UNAUTHORIZED;
-		}
-	}
-
-	public Result receivedProduction(User user, Long spikeOrderId){
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
-		Long spikeOrderOwnerId = spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
-		if (spikeOrderOwnerId.equals(user.getId())){
-			SpikeOrder spikeOrderToChangeStatus = new SpikeOrder();
-			spikeOrderToChangeStatus.setId(spikeOrderId);
-			spikeOrderToChangeStatus.setStatus((byte) 4);
 			try{
 				transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 					@Override
 					protected void doInTransactionWithoutResult(TransactionStatus status) {
-						// 更新订单状态
-						spikeOrderMapper.updateByPrimaryKeySelective(spikeOrderToChangeStatus);
-						// 查询订单金币
-						BigDecimal price = spikeOrderMapper.selectPriceByPrimaryKey(spikeOrderId);
-						// 增加创建者金币
-						userMapper.incrementCoinById(price,user.getId());
+						Byte orderStatus = spikeOrderMapper.selectStatusByPrimaryKey(spikeOrderId);
+						if (orderStatus <= 2){
+							spikeOrderMapper.updateStatusByPrimaryKey(spikeOrderId,(byte)3);
+						}
 					}
 				});
 			}catch (Exception e){
@@ -133,10 +113,34 @@ public class SendService {
 		}
 	}
 
+	public Result receivedProduction(User user, Long spikeOrderId){
+		if (user == null)
+			return AuthResult.UNAUTHORIZED;
+		Long spikeOrderOwnerId = spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
+		if (spikeOrderOwnerId.equals(user.getId())){
 
-
-	public void sendMail(MailVo mailVo){
-		mqSender.sendToEmailTopic(mailVo);
+			try{
+				transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+					@Override
+					protected void doInTransactionWithoutResult(TransactionStatus status) {
+						Byte orderStatus = spikeOrderMapper.selectStatusByPrimaryKey(spikeOrderId);
+						if (orderStatus == 3){
+							// 更新订单状态
+							spikeOrderMapper.updateStatusByPrimaryKey(spikeOrderId,(byte)4);
+							// 查询订单金币
+							BigDecimal price = spikeOrderMapper.selectPriceByPrimaryKey(spikeOrderId);
+							// 增加创建者金币
+							userMapper.incrementCoinById(price,user.getId());
+						}
+					}
+				});
+			}catch (Exception e){
+				return SendResult.NOTICE_ERROR;
+			}
+			return SendResult.NOTICE_SUCCESS;
+		}else{
+			return AuthResult.UNAUTHORIZED;
+		}
 	}
 
 	// 发送邮件操作耗时，扔给线程池处理，避免占用了过多的消费者数使得其他消费者无法得到执行

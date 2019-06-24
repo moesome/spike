@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Service
@@ -35,6 +36,7 @@ public class UserService {
 		Date date = new Date();
 		user.setCreatedAt(date);
 		user.setUpdatedAt(date);
+		user.setCoin(BigDecimal.ZERO);
 		userMapper.insert(user);
 		User returnUser = new User();
 		returnUser.setId(user.getId());

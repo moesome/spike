@@ -14,6 +14,10 @@ public interface SpikeOrderMapper {
 
 	SpikeOrder selectByPrimaryKey(Long id);
 
+	Byte selectStatusByPrimaryKey(Long id);
+
+	int updateStatusByPrimaryKey(Long id,Byte status);
+
 	int updateByPrimaryKeySelective(SpikeOrder record);
 
 	int updateByPrimaryKey(SpikeOrder record);

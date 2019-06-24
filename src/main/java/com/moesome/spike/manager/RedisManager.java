@@ -113,6 +113,10 @@ public class RedisManager {
 		return "spikeOrder-userId:"+spikeOrder.getUserId()+"-spikeId:"+spikeOrder.getSpikeId();
 	}
 
+	public boolean testStock(Long spikeId){
+		return redisTemplateForSpikeOrderPreDecrement.opsForHash().get("spike"+spikeId,"stock") != null;
+	}
+
 	/**
 	 * 预减库存，成功减少库存返回 true
 	 * @param spikeId

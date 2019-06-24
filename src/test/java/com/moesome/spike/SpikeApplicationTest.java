@@ -94,7 +94,7 @@ public class SpikeApplicationTest {
 	@Test
 	public void spikeTest(){
 		// 创建 spike
-		Spike spike = storeSpike();
+		Spike spike = storeSpike(false);
 		// 修改 spike
 		updateSpike(spike);
 		// 查询 spike
@@ -107,7 +107,7 @@ public class SpikeApplicationTest {
 	@Test
 	public void spikeOrderTest(){
 		// 创建 spike
-		Spike spike = storeSpike();
+		Spike spike = storeSpike(true);
 		// 新增 order
 		storeSpikeOrder(spike);
 		// 循环 check order
@@ -123,7 +123,7 @@ public class SpikeApplicationTest {
 	@Test
 	public void sendTest(){
 		// 创建 spike
-		Spike spike = storeSpike();
+		Spike spike = storeSpike(true);
 		// 新增 order
 		storeSpikeOrder(spike);
 		// 循环 check order
@@ -213,11 +213,15 @@ public class SpikeApplicationTest {
 
 
 
-	private Spike storeSpike(){
+	private Spike storeSpike(boolean isStart){
 		SpikeVo spikeVo = new SpikeVo();
 		spikeVo.setStock(2);
 		spikeVo.setEndAt(new Date(System.currentTimeMillis()+100000));
-		spikeVo.setStartAt(new Date(System.currentTimeMillis()-100000));
+		if (isStart){
+			spikeVo.setStartAt(new Date(System.currentTimeMillis()-100000));
+		}else{
+			spikeVo.setStartAt(new Date(System.currentTimeMillis()+100000));
+		}
 		spikeVo.setDetail("test");
 		spikeVo.setName("test" + Math.random());
 		Result result = spikeController.store(user, spikeVo);

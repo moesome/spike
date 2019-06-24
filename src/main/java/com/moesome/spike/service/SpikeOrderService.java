@@ -14,6 +14,7 @@ import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.result.OrderResult;
 import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.model.pojo.result.SpikeOrderResult;
+import com.moesome.spike.model.pojo.vo.SpikePriceAndStockVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,8 @@ public class SpikeOrderService {
 	@Autowired
 	private TransactionTemplate transactionTemplate;
 
+	private static final RuntimeException ORDER_FAILED = new RuntimeException();
+
 	/**
 	 * 1. 初始化时，预加载所有秒杀项目到 redis，查询时从 redis 读出数据（主界面查询时并发不高，仍用数据库来查）
 	 * 2. 收到请求时，redis 库存减一，如果还大于 0 则将秒杀请求加入队列（读写分离）
@@ -71,15 +74,18 @@ public class SpikeOrderService {
 			return OrderResult.REPEATED_REQUEST;
 		}
 		// 预减库存 2
-		if (!redisManager.decrementStock(spikeId)){
-			return OrderResult.LIMIT_EXCEED;
-		}
+		if(redisManager.testStock(spikeId)){
+			if (!redisManager.decrementStock(spikeId)){
+				return OrderResult.LIMIT_EXCEED;
+			}
+		}// 直接跳过，等接下来的步骤重建缓存
+
 		Spike spikeInRedis = redisManager.getSpike(spikeId);
 		if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null){
 			// redis 查出的结果无效则还是在数据库中取
 			spikeInRedis = spikeMapper.selectByPrimaryKey(spikeId);
 			// 刷新缓存
-			redisManager.removeSpike(spikeInRedis);
+			redisManager.saveSpike(spikeInRedis);
 		}
 		Date now = new Date();
 		// 在开始之前或结束之后则直接返回错误码
@@ -125,32 +131,38 @@ public class SpikeOrderService {
 			transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
-						// 取数据库价格
-						BigDecimal price = spikeMapper.selectPriceByPrimaryKey(spikeOrderVo.getSpikeId());
-						if (price.compareTo(BigDecimal.ZERO) > 0){
-							// 减金币
-							boolean decrementCoin = userMapper.decrementCoinById(price, spikeOrderVo.getUserId()) > 0;
-							if (!decrementCoin){
-								System.out.println("减金币失败");
-								resolverOrderFailed(spikeOrderVo);
-								return;
-							}
+					// 取数据库数据
+					SpikePriceAndStockVo spikePriceAndStockVo = spikeMapper.selectPriceAndStockByPrimaryKey(spikeOrderVo.getSpikeId());
+					if (spikePriceAndStockVo.getPrice().compareTo(BigDecimal.ZERO) > 0){
+						// 减金币
+						boolean decrementCoin = userMapper.decrementCoinById(spikePriceAndStockVo.getPrice(), spikeOrderVo.getUserId()) > 0;
+						if (!decrementCoin){
+							System.out.println("减金币失败");
+							throw ORDER_FAILED;
 						}
+					}// 售价不大于零不用减金币
+
+					if (spikePriceAndStockVo.getStock() > 0){
 						// 减库存
 						boolean decrementStock = spikeMapper.decrementStockById(spikeOrderVo.getSpikeId()) > 0;
 						if (!decrementStock){
 							System.out.println("减库存失败");
-							resolverOrderFailed(spikeOrderVo);
-							return;
+							throw ORDER_FAILED;
 						}
-						// 下订单
-						SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), new Date(), (byte) 1,price);
-						spikeOrderMapper.insert(spikeOrder);
-						// 订单加入缓存，用于轮询时查询 4
-						// spikeOrder 主键已由 mybatis 在插入成功后自动注入
-						redisManager.saveSpikeOrder(spikeOrder,true);
-						// 刷新第一页缓存
-						redisManager.reCacheFirstPage();
+					}else{
+						// 库存小于等于零直接终止处理
+						throw ORDER_FAILED;
+					}
+					// 下订单
+					SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), new Date(), (byte) 1,spikePriceAndStockVo.getPrice());
+					spikeOrderMapper.insert(spikeOrder);
+					// 订单加入缓存，用于轮询时查询 4
+					// spikeOrder 主键已由 mybatis 在插入成功后自动注入
+					redisManager.saveSpikeOrder(spikeOrder,true);
+					// 刷新第一页缓存
+					redisManager.reCacheFirstPage();
+					// TODO :写日志，暂时输出到控制台
+					System.out.println("spike"+spikeOrderVo.getSpikeId()+"处理完成，处理时间："+new Date()+"处理时剩余库存："+spikePriceAndStockVo.getStock()+"售价："+spikePriceAndStockVo.getPrice());
 				}
 			});
 		// 捕获重复下单异常

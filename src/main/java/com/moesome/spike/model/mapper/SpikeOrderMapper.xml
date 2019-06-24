@@ -144,6 +144,12 @@
         where user_id = #{userId} and spike.spike_order.spike_id = #{spikeId}
     </delete>
     <select id="selectPriceByPrimaryKey" resultType="java.math.BigDecimal">
-        select price from spike.spike_order where id = #{id,jdbcType=BIGINT}
+        select price from spike_order where id = #{id,jdbcType=BIGINT}
     </select>
+    <select id="selectStatusByPrimaryKey" resultType="java.lang.Byte">
+        select status from spike_order where id = #{id,jdbcType=BIGINT}
+    </select>
+    <update id="updateStatusByPrimaryKey">
+        update spike_order set status = #{status,jdbcType=TINYINT}  where id = #{id,jdbcType=BIGINT}
+    </update>
 </mapper>

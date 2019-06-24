@@ -2,6 +2,7 @@ package com.moesome.spike.model.pojo.result;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.moesome.spike.exception.message.Code;
+import com.moesome.spike.exception.message.ErrorCode;
 import com.moesome.spike.exception.message.SuccessCode;
 import com.moesome.spike.model.domain.Spike;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class SpikeResult extends Result<List<Spike>>{
 
 	Date now;
 	public static final SpikeResult OK_WITHOUT_BODY = new SpikeResult(SuccessCode.OK);
+	public static final SpikeResult TIME_NOT_ALLOW = new SpikeResult(ErrorCode.TIME_NOT_ALLOW);
 
 	public SpikeResult(Code code) {
 		super(code);

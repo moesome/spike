@@ -125,6 +125,11 @@ public class SpikeService {
 			return AuthResult.UNAUTHORIZED;
 		// 从数据库中根据传入的 spike id 取出
 		Spike spikeInDB = getSpikeById(id);
+		Date now = new Date();
+		// 开始秒杀后禁止修改
+		if (new Date().after(spikeInDB.getStartAt()) && now.before(spikeInDB.getEndAt())){
+			return SpikeResult.TIME_NOT_ALLOW;
+		}
 		// 校验该 spike 用户是否拥有
 		if (spikeInDB.getUserId().equals(user.getId())){
 			// 如果拥有才能执行更新
