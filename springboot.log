@@ -968,3 +968,79 @@ Caused by: java.io.FileNotFoundException: class path resource [api.moesome.com.j
 2019-06-24 18:51:39.284  INFO 3204 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Shutdown ignored - container is not active already
 2019-06-24 18:51:39.285  INFO 3204 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
 2019-06-24 18:51:39.294  INFO 3204 --- [Thread-3] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closed
+2019-06-24 18:59:35.792  INFO 16308 --- [main] com.moesome.spike.SpikeApplication       : Starting SpikeApplication on DESKTOP-73F2SK6 with PID 16308 (C:\Users\xiao\spike\target\classes started by xiao in C:\Users\xiao\spike)
+2019-06-24 18:59:35.794  INFO 16308 --- [main] com.moesome.spike.SpikeApplication       : No active profile set, falling back to default profiles: default
+2019-06-24 18:59:36.560  INFO 16308 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2019-06-24 18:59:36.562  INFO 16308 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-06-24 18:59:36.596  INFO 16308 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 22ms. Found 0 repository interfaces.
+2019-06-24 18:59:36.888  INFO 16308 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.retry.annotation.RetryConfiguration' of type [org.springframework.retry.annotation.RetryConfiguration$$EnhancerBySpringCGLIB$$cd5eec84] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 18:59:36.924  INFO 16308 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$d79b545f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 18:59:37.220  INFO 16308 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 443 (https)
+2019-06-24 18:59:37.240  INFO 16308 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2019-06-24 18:59:37.240  INFO 16308 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.17]
+2019-06-24 18:59:37.344  INFO 16308 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2019-06-24 18:59:37.344  INFO 16308 --- [main] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1501 ms
+2019-06-24 18:59:38.109  INFO 16308 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-06-24 18:59:38.785  INFO 16308 --- [main] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+2019-06-24 18:59:38.962  INFO 16308 --- [main] io.lettuce.core.EpollProvider            : Starting without optional epoll library
+2019-06-24 18:59:38.964  INFO 16308 --- [main] io.lettuce.core.KqueueProvider           : Starting without optional kqueue library
+2019-06-24 18:59:40.266  INFO 16308 --- [main] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService 'taskScheduler'
+2019-06-24 18:59:40.361  INFO 16308 --- [main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2019-06-24 18:59:40.391  INFO 16308 --- [main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#26844abb:0/SimpleConnection@4026461d [delegate=amqp://guest@127.0.0.1:5672/, localPort= 10845]
+2019-06-24 18:59:40.497  INFO 16308 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 443 (https) with context path ''
+2019-06-24 18:59:40.501  INFO 16308 --- [main] com.moesome.spike.SpikeApplication       : Started SpikeApplication in 5.131 seconds (JVM running for 6.361)
+2019-06-24 18:59:57.465  INFO 5340 --- [main] com.moesome.spike.SpikeApplicationTest   : Starting SpikeApplicationTest on DESKTOP-73F2SK6 with PID 5340 (started by xiao in C:\Users\xiao\spike)
+2019-06-24 18:59:57.467  INFO 5340 --- [main] com.moesome.spike.SpikeApplicationTest   : No active profile set, falling back to default profiles: default
+2019-06-24 18:59:58.450  INFO 5340 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2019-06-24 18:59:58.453  INFO 5340 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-06-24 18:59:58.498  INFO 5340 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 28ms. Found 0 repository interfaces.
+2019-06-24 18:59:59.045  INFO 5340 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.retry.annotation.RetryConfiguration' of type [org.springframework.retry.annotation.RetryConfiguration$$EnhancerBySpringCGLIB$$75f6b056] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 18:59:59.074  INFO 5340 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$80331831] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 19:00:00.962  INFO 5340 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-06-24 19:00:01.992  INFO 5340 --- [main] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+2019-06-24 19:00:02.300  INFO 5340 --- [main] io.lettuce.core.EpollProvider            : Starting without optional epoll library
+2019-06-24 19:00:02.303  INFO 5340 --- [main] io.lettuce.core.KqueueProvider           : Starting without optional kqueue library
+2019-06-24 19:00:04.790  INFO 5340 --- [main] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService 'taskScheduler'
+2019-06-24 19:00:04.887  INFO 5340 --- [main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2019-06-24 19:00:04.954  INFO 5340 --- [main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#485e13d7:0/SimpleConnection@597a7afa [delegate=amqp://guest@127.0.0.1:5672/, localPort= 10876]
+2019-06-24 19:00:05.031  INFO 5340 --- [main] com.moesome.spike.SpikeApplicationTest   : Started SpikeApplicationTest in 7.871 seconds (JVM running for 8.826)
+2019-06-24 19:00:16.249  INFO 5340 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Waiting for workers to finish.
+2019-06-24 19:00:16.783  INFO 5340 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Successfully waited for workers to finish.
+2019-06-24 19:00:16.788  INFO 5340 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Waiting for workers to finish.
+2019-06-24 19:00:17.023  INFO 5340 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Successfully waited for workers to finish.
+2019-06-24 19:00:17.028  INFO 5340 --- [Thread-3] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'taskScheduler'
+2019-06-24 19:00:17.040  INFO 5340 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Shutdown ignored - container is not active already
+2019-06-24 19:00:17.040  INFO 5340 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Shutdown ignored - container is not active already
+2019-06-24 19:00:17.042  INFO 5340 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2019-06-24 19:00:17.061  INFO 5340 --- [Thread-3] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closed
+2019-06-24 19:02:38.063  INFO 12252 --- [main] com.moesome.spike.SpikeApplication       : Starting SpikeApplication on DESKTOP-73F2SK6 with PID 12252 (C:\Users\xiao\spike\target\classes started by xiao in C:\Users\xiao\spike)
+2019-06-24 19:02:38.067  INFO 12252 --- [main] com.moesome.spike.SpikeApplication       : No active profile set, falling back to default profiles: default
+2019-06-24 19:02:39.012  INFO 12252 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2019-06-24 19:02:39.015  INFO 12252 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-06-24 19:02:39.049  INFO 12252 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 23ms. Found 0 repository interfaces.
+2019-06-24 19:02:39.390  INFO 12252 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.retry.annotation.RetryConfiguration' of type [org.springframework.retry.annotation.RetryConfiguration$$EnhancerBySpringCGLIB$$6f54a154] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 19:02:39.423  INFO 12252 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$7991092f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 19:02:46.677  INFO 11324 --- [main] com.moesome.spike.SpikeApplicationTest   : Starting SpikeApplicationTest on DESKTOP-73F2SK6 with PID 11324 (started by xiao in C:\Users\xiao\spike)
+2019-06-24 19:02:46.679  INFO 11324 --- [main] com.moesome.spike.SpikeApplicationTest   : No active profile set, falling back to default profiles: default
+2019-06-24 19:02:47.645  INFO 11324 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode!
+2019-06-24 19:02:47.650  INFO 11324 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-06-24 19:02:47.696  INFO 11324 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 28ms. Found 0 repository interfaces.
+2019-06-24 19:02:48.227  INFO 11324 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.retry.annotation.RetryConfiguration' of type [org.springframework.retry.annotation.RetryConfiguration$$EnhancerBySpringCGLIB$$75f6b056] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 19:02:48.250  INFO 11324 --- [main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration' of type [org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration$$EnhancerBySpringCGLIB$$80331831] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2019-06-24 19:02:50.258  INFO 11324 --- [main] o.s.s.concurrent.ThreadPoolTaskExecutor  : Initializing ExecutorService 'applicationTaskExecutor'
+2019-06-24 19:02:51.271  INFO 11324 --- [main] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} inited
+2019-06-24 19:02:51.573  INFO 11324 --- [main] io.lettuce.core.EpollProvider            : Starting without optional epoll library
+2019-06-24 19:02:51.576  INFO 11324 --- [main] io.lettuce.core.KqueueProvider           : Starting without optional kqueue library
+2019-06-24 19:02:54.061  INFO 11324 --- [main] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService 'taskScheduler'
+2019-06-24 19:02:54.159  INFO 11324 --- [main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2019-06-24 19:02:54.230  INFO 11324 --- [main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#485e13d7:0/SimpleConnection@29dcdd1c [delegate=amqp://guest@127.0.0.1:5672/, localPort= 10946]
+2019-06-24 19:02:54.472  INFO 11324 --- [main] com.moesome.spike.SpikeApplicationTest   : Started SpikeApplicationTest in 8.101 seconds (JVM running for 9.116)
+2019-06-24 19:03:05.640  INFO 11324 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Waiting for workers to finish.
+2019-06-24 19:03:06.218  INFO 11324 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Successfully waited for workers to finish.
+2019-06-24 19:03:06.224  INFO 11324 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Waiting for workers to finish.
+2019-06-24 19:03:06.464  INFO 11324 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Successfully waited for workers to finish.
+2019-06-24 19:03:06.472  INFO 11324 --- [Thread-3] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'taskScheduler'
+2019-06-24 19:03:06.492  INFO 11324 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Shutdown ignored - container is not active already
+2019-06-24 19:03:06.492  INFO 11324 --- [Thread-3] o.s.a.r.l.SimpleMessageListenerContainer : Shutdown ignored - container is not active already
+2019-06-24 19:03:06.494  INFO 11324 --- [Thread-3] o.s.s.concurrent.ThreadPoolTaskExecutor  : Shutting down ExecutorService 'applicationTaskExecutor'
+2019-06-24 19:03:06.507  INFO 11324 --- [Thread-3] com.alibaba.druid.pool.DruidDataSource   : {dataSource-1} closed

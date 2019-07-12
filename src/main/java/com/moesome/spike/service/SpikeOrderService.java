@@ -81,11 +81,16 @@ public class SpikeOrderService {
 		}// 直接跳过，等接下来的步骤重建缓存
 
 		Spike spikeInRedis = redisManager.getSpike(spikeId);
+		// 防止缓存穿透
 		if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null){
-			// redis 查出的结果无效则还是在数据库中取
-			spikeInRedis = spikeMapper.selectByPrimaryKey(spikeId);
-			// 刷新缓存
-			redisManager.saveSpike(spikeInRedis);
+			synchronized (this){
+				if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null) {
+					// redis 查出的结果无效则还是在数据库中取
+					spikeInRedis = spikeMapper.selectByPrimaryKey(spikeId);
+					// 刷新缓存
+					redisManager.saveSpike(spikeInRedis);
+				}
+			}
 		}
 		Date now = new Date();
 		// 在开始之前或结束之后则直接返回错误码

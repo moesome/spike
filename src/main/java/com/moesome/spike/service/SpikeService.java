@@ -127,15 +127,8 @@ public class SpikeService {
 		Spike spikeInDB = getSpikeById(id);
 		Date now = new Date();
 		// 开始秒杀后禁止修改
-		System.out.println("时间判断");
 		if (now.after(spikeInDB.getStartAt()) && now.before(spikeInDB.getEndAt())){
-			System.out.println("时间成功");
 			return SpikeResult.TIME_NOT_ALLOW;
-		}else{
-			System.out.println(new Date());
-			System.out.println(spikeInDB.getStartAt());
-			System.out.println(spikeInDB.getEndAt());
-			System.out.println("时间失败");
 		}
 		// 校验该 spike 用户是否拥有
 		if (spikeInDB.getUserId().equals(user.getId())){
