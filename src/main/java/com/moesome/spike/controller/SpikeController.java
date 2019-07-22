@@ -29,6 +29,11 @@ public class SpikeController implements InitializingBean {
 		return spikeService.show(user,id);
 	}
 
+	@GetMapping("spikes/detail/{id}")
+	public Result detail(@PathVariable Long id){
+		return spikeService.detail(id);
+	}
+
 	@PostMapping("spikes")
 	public Result store(User user,@RequestBody @Validated SpikeVo spikeVo){
 		return spikeService.store(user,spikeVo);

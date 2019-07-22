@@ -32,40 +32,18 @@ public class SpikeService {
 	 */
 	public void init() {
 		List<Spike> spikes = spikeMapper.selectAll();
-		LinkedList<Spike> firstPage = new LinkedList<>();
 		int i = 0;//计数
 		for (Spike spike : spikes){
 			// 缓存秒杀验证数据
 			redisManager.saveSpike(spike);
-			if (i + 10 >= spikes.size()){
-				firstPage.push(spike);
-			}
-			i++;
 		}
-		// 缓存商品第一页
-		redisManager.cacheFirstPage(firstPage);
-		// 缓存总数
-		redisManager.cachePageCount(i);
 	}
 
 	public Result index(String order, int page){
 		String o = commonService.orderFormat(order);
 		int p = commonService.pageFormat(page);
-		List<Spike> spikeList;
-		Integer count;
-		if (o.equals("DESC") && p == 1){
-			// 返回缓存
-			spikeList = redisManager.getFirstPage();
-			count = redisManager.getPageCount();
-			// 缓存有效直接返回
-			if (spikeList != null && count != null){
-				// System.out.println("查缓存第一页");
-				return new SpikeResult(SuccessCode.OK,spikeList, count);
-			}
-		}
-		// 缓存无效或没有查询第一页则返回数据库内容
-		spikeList = spikeMapper.selectByPagination(o, (p - 1) * 10, 10);
-		count = spikeMapper.count();
+		List<Spike> spikeList= spikeMapper.selectByPagination(o, (p - 1) * 10, 10);
+		Integer count = spikeMapper.count();
 		return new SpikeResult(SuccessCode.OK,spikeList, count);
 	}
 
@@ -100,7 +78,6 @@ public class SpikeService {
 		transformSpikeVoMessageToSpike(spikeVo,spike);
 		spikeMapper.insertSelective(spike);
 		redisManager.saveSpike(spike);
-		redisManager.reCacheFirstPage();
 		ArrayList<Spike> arrayList = new ArrayList<>(1);
 		arrayList.add(spike);
 		return new SpikeResult(SuccessCode.OK,arrayList,1);
@@ -113,6 +90,17 @@ public class SpikeService {
 		List<Spike> list = new ArrayList<>(1);
 		Spike spike = getSpikeById(id);// 从数据库中取出
 		if (spike != null && spike.getUserId().equals(user.getId())){ // 校验取出的数据用户是否拥有
+			list.add(spike);
+			return new SpikeResult(SuccessCode.OK,list,1);
+		}else{
+			return AuthResult.AUTH_FAILED;
+		}
+	}
+
+	public Result detail(Long id) {
+		List<Spike> list = new ArrayList<>(1);
+		Spike spike = getSpikeById(id);// 从数据库中取出
+		if (spike != null){
 			list.add(spike);
 			return new SpikeResult(SuccessCode.OK,list,1);
 		}else{
@@ -139,7 +127,6 @@ public class SpikeService {
 			transformSpikeVoMessageToSpike(spikeVo,spike);
 			spikeMapper.updateByPrimaryKeySelective(spike);
 			redisManager.saveSpike(spike);
-			redisManager.reCacheFirstPage();
 			return SpikeResult.OK_WITHOUT_BODY;
 		}else{
 			return AuthResult.AUTH_FAILED;
@@ -155,8 +142,6 @@ public class SpikeService {
 			spikeMapper.deleteByPrimaryKey(id);
 			// 删除 redis
 			redisManager.removeSpike(spike);
-			// 刷新第一页缓存
-			redisManager.reCacheFirstPage();
 			return SpikeResult.OK_WITHOUT_BODY;
 		}else{
 			return AuthResult.AUTH_FAILED;

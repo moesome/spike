@@ -19,9 +19,6 @@ import java.util.Date;
 @Service
 public class UserService {
 	@Autowired
-	private CommonService commonService;
-
-	@Autowired
 	private UserMapper userMapper;
 
 	@Autowired
@@ -65,8 +62,6 @@ public class UserService {
 			userMapper.updateByPrimaryKeySelective(user);
 			// 删除旧缓存
 			redisManager.saveUser(user,sessionId);
-			// 刷新第一页（第一页用户名可能会变）
-			redisManager.reCacheFirstPage();
 			return new UserResult(SuccessCode.OK,user);
 		}else{
 			return AuthResult.AUTH_FAILED;

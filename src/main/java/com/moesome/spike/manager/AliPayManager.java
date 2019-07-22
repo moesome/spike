@@ -54,8 +54,8 @@ public class AliPayManager {
 	 */
 	public void pay(HttpServletResponse httpServletResponse, String model, AliPayVo aliPayVo){
 		AlipayTradePagePayRequest alipayRequest = new AlipayTradePagePayRequest();//创建API对应的request
-		alipayRequest.setReturnUrl("https://api.moesome.com/"+model+"/return");
-		alipayRequest.setNotifyUrl("https://api.moesome.com/"+model+"/notify");//在公共参数中设置回跳和通知地址
+		alipayRequest.setReturnUrl("http://api.moesome.com/"+model+"/return");
+		alipayRequest.setNotifyUrl("http://api.moesome.com/"+model+"/notify");//在公共参数中设置回跳和通知地址
 		try {
 			alipayRequest.setBizContent(objectMapper.writeValueAsString(aliPayVo));//填充业务参数
 			System.out.println(alipayRequest.getBizContent());

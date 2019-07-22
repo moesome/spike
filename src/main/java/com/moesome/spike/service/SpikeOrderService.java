@@ -29,7 +29,6 @@ import java.util.List;
 
 @Service
 public class SpikeOrderService {
-
 	@Autowired
 	private CommonService commonService;
 
@@ -81,9 +80,12 @@ public class SpikeOrderService {
 		}// 直接跳过，等接下来的步骤重建缓存
 
 		Spike spikeInRedis = redisManager.getSpike(spikeId);
-		// 防止缓存穿透
+		// 防止缓存击穿
 		if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null){
-			synchronized (this){
+			// 加刷新锁确保只有一个线程可能会查数据库
+			synchronized (RedisManager.SPIKE_REFRESH_LOCK){
+				// 重新校验是否被其他线程刷新了
+				spikeInRedis = redisManager.getSpike(spikeId);
 				if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null) {
 					// redis 查出的结果无效则还是在数据库中取
 					spikeInRedis = spikeMapper.selectByPrimaryKey(spikeId);
@@ -164,8 +166,6 @@ public class SpikeOrderService {
 					// 订单加入缓存，用于轮询时查询 4
 					// spikeOrder 主键已由 mybatis 在插入成功后自动注入
 					redisManager.saveSpikeOrder(spikeOrder,true);
-					// 刷新第一页缓存
-					redisManager.reCacheFirstPage();
 					// TODO :写日志，暂时输出到控制台
 					System.out.println("spike"+spikeOrderVo.getSpikeId()+"处理完成，处理时间："+new Date()+"处理时剩余库存："+spikePriceAndStockVo.getStock()+"售价："+spikePriceAndStockVo.getPrice());
 				}
@@ -256,7 +256,6 @@ public class SpikeOrderService {
 		spikeOrderVo.setUserId(user.getId());
 		spikeOrderVo.setSpikeId(spikeId);
 		redisManager.removeSpikeOrderVo(spikeOrderVo);
-
 		// 清除：订单加入缓存，用于轮询时查询 4
 		SpikeOrder spikeOrder = new SpikeOrder();
 		spikeOrder.setUserId(user.getId());

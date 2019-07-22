@@ -20,28 +20,20 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class RedisManager {
+	public static final Object SPIKE_REFRESH_LOCK = new Object();
+
 	@Autowired
 	private RedisTemplate<String, User> redisTemplateForUser;
 
 	@Autowired
-	private RedisTemplate<String, List<Spike>> redisTemplateForFirstPage;
-
-	@Autowired
-	private SpikeMapper spikeMapper;
-
-	@Autowired
 	private RedisTemplate<String,Object> redisTemplateForSpike;
-
-	// 取预减库存使用
-	@Autowired
-	private RedisTemplate<String, Integer> redisTemplateForSpikeOrderPreDecrement;
 
 	// 存储订单结果，供下单后轮询使用
 	@Autowired
 	private RedisTemplate<String, SpikeOrder> redisTemplateForSpikeOrder;
 
 	// 校验用户是否已经发出了请求，防止多次请求带来的阻塞
-	@Qualifier("redisTemplate")
+	@Qualifier("stringRedisTemplate")
 	@Autowired
 	private RedisTemplate<String, String> redisTemplateForSpikeOrderVo;
 
@@ -114,7 +106,7 @@ public class RedisManager {
 	}
 
 	public boolean testStock(Long spikeId){
-		return redisTemplateForSpikeOrderPreDecrement.opsForHash().get("spike"+spikeId,"stock") != null;
+		return redisTemplateForSpike.opsForHash().get("spike"+spikeId,"stock") != null;
 	}
 
 	/**
@@ -123,7 +115,7 @@ public class RedisManager {
 	 * @return
 	 */
 	public boolean decrementStock(Long spikeId){
-		return redisTemplateForSpikeOrderPreDecrement.opsForHash().increment("spike" + spikeId, "stock", -1) >= 0;
+		return redisTemplateForSpike.opsForHash().increment("spike" + spikeId, "stock", -1) >= 0;
 	}
 
 	/**
@@ -131,7 +123,7 @@ public class RedisManager {
 	 * @param spikeId
 	 */
 	public void incrementStock(Long spikeId){
-		redisTemplateForSpikeOrderPreDecrement.opsForHash().increment("spike" + spikeId, "stock", 1);
+		redisTemplateForSpike.opsForHash().increment("spike" + spikeId, "stock", 1);
 	}
 
 	/**
@@ -139,11 +131,16 @@ public class RedisManager {
 	 * @param spike
 	 */
 	public void saveSpike(Spike spike){
-		HashMap<String, Object> stringObjectHashMap = new HashMap<>(3);
+		HashMap<String, Object> stringObjectHashMap = new HashMap<>(9);
+		stringObjectHashMap.put("name",spike.getName());
+		stringObjectHashMap.put("userId",spike.getUserId());
+		stringObjectHashMap.put("detail",spike.getDetail());
 		stringObjectHashMap.put("stock",spike.getStock());
 		stringObjectHashMap.put("price",spike.getPrice());
 		stringObjectHashMap.put("startAt",spike.getStartAt());
 		stringObjectHashMap.put("endAt",spike.getEndAt());
+		stringObjectHashMap.put("createdAt",spike.getCreatedAt());
+		stringObjectHashMap.put("updatedAt",spike.getUpdatedAt());
 		redisTemplateForSpike.opsForHash().putAll("spike"+spike.getId(),stringObjectHashMap);
 	}
 
@@ -154,15 +151,27 @@ public class RedisManager {
 	 */
 	public Spike getSpike(Long spikeId){
 		// 从缓存取信息用于校验
-		ArrayList<Object> list = new ArrayList<>(3);
+		ArrayList<Object> list = new ArrayList<>(9);
+		list.add("name");
+		list.add("userId");
+		list.add("detail");
+		list.add("stock");
+		list.add("price");
 		list.add("startAt");
 		list.add("endAt");
-		list.add("price");
+		list.add("createdAt");
+		list.add("updatedAt");
 		List<Object> multiGet = redisTemplateForSpike.opsForHash().multiGet("spike" + spikeId,list);
 		Spike spike = new Spike();
-		spike.setStartAt((Date)multiGet.get(0));
-		spike.setEndAt((Date)multiGet.get(1));
-		spike.setPrice((BigDecimal)multiGet.get(2));
+		spike.setName((String)multiGet.get(0));
+		spike.setUserId(Long.valueOf(multiGet.get(1).toString()));
+		spike.setDetail((String) multiGet.get(2));
+		spike.setStock((Integer) multiGet.get(3));
+		spike.setPrice((BigDecimal) multiGet.get(4));
+		spike.setStartAt((Date)multiGet.get(5));
+		spike.setEndAt((Date)multiGet.get(6));
+		spike.setCreatedAt((Date)multiGet.get(7));
+		spike.setUpdatedAt((Date)multiGet.get(8));
 		return spike;
 	}
 
@@ -203,26 +212,31 @@ public class RedisManager {
 		redisTemplateForUser.opsForValue().set(sessionId, user, RedisConfig.EXPIRE_SECOND,TimeUnit.SECONDS);
 		return sessionId;
 	}
-	/**
+	/*public void reCacheFirstPage(List<Spike> firstPage,int count){
+		synchronized (RedisManager.FIRSTPAGE_REFRESH_LOCK){
+			cacheFirstPage(firstPage);
+			cachePageCount(count);
+		}
+	}
+
+	*//**
 	 * 刷新秒杀商品第一页缓存
-	 */
+	 *//*
 	public void reCacheFirstPage(){
 		// System.out.println("刷新商品第一页缓存");
 		// 缓存商品第一页
-		cacheFirstPage(spikeMapper.selectByPagination("DESC", 0, 10));
-		// 缓存总数
-		cachePageCount(spikeMapper.count());
-	}
+		reCacheFirstPage(spikeMapper.selectByPagination("DESC", 0, 10),spikeMapper.count());
+	}*/
 
 	/**
 	 * 从 redis 移除 spike
 	 * @param spike
 	 */
 	public void removeSpike(Spike spike){
-		redisTemplateForSpike.opsForHash().delete("spike"+spike.getId(),"stock","startAt","endAt");
+		redisTemplateForSpike.delete("spike"+spike.getId());
 	}
 
-	public void cacheFirstPage(List<Spike> firstPage){
+	/*public void cacheFirstPage(List<Spike> firstPage){
 		// 缓存商品第一页
 		redisTemplateForFirstPage.opsForValue().set("firstSpikePage",firstPage);
 	}
@@ -239,7 +253,7 @@ public class RedisManager {
 	public Integer getPageCount(){
 		return (Integer)redisTemplateForSpike.opsForValue().get("pageCount");
 	}
-
+*/
 	public Boolean lockSpike(Long spikeId){
 		return redisTemplateForSpike.opsForValue().setIfAbsent("lock:spike-"+spikeId,true,10,TimeUnit.SECONDS);
 	}
