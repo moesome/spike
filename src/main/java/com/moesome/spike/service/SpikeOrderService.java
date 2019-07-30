@@ -1,7 +1,10 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.manager.DistributedLockForSpike;
+import com.moesome.spike.manager.MQSenderManager;
 import com.moesome.spike.manager.RedisManager;
+import com.moesome.spike.manager.inter.DistributedLock;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.dao.SpikeOrderMapper;
 import com.moesome.spike.model.dao.UserMapper;
@@ -36,6 +39,9 @@ public class SpikeOrderService {
 	private RedisManager redisManager;
 
 	@Autowired
+	private DistributedLockForSpike distributedLockForSpike;
+
+	@Autowired
 	private SpikeMapper spikeMapper;
 
 	@Autowired
@@ -45,7 +51,7 @@ public class SpikeOrderService {
 	private SpikeOrderMapper spikeOrderMapper;
 
 	@Autowired
-	private MQSender mqSender;
+	private MQSenderManager mqSenderManager;
 
 	@Autowired
 	private TransactionTemplate transactionTemplate;
@@ -62,9 +68,6 @@ public class SpikeOrderService {
 	 * @return
 	 */
 	public Result store(User user,SpikeOrderVo spikeOrderVo,String sessionId) {
-		// 检查是否登录
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		spikeOrderVo.setSessionId(sessionId);
 		spikeOrderVo.setUserId(user.getId());
 		Long spikeId = spikeOrderVo.getSpikeId();
@@ -80,19 +83,19 @@ public class SpikeOrderService {
 		}// 直接跳过，等接下来的步骤重建缓存
 
 		Spike spikeInRedis = redisManager.getSpike(spikeId);
-		// 防止缓存击穿
+		// 防止缓存击穿、雪崩时对数据库造成过大压力
 		if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null){
-			// 加刷新锁确保只有一个线程可能会查数据库
-			synchronized (RedisManager.SPIKE_REFRESH_LOCK){
-				// 重新校验是否被其他线程刷新了
-				spikeInRedis = redisManager.getSpike(spikeId);
-				if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null) {
-					// redis 查出的结果无效则还是在数据库中取
-					spikeInRedis = spikeMapper.selectByPrimaryKey(spikeId);
-					// 刷新缓存
-					redisManager.saveSpike(spikeInRedis);
-				}
+			// 加刷新锁确保只有一个线程可能会查数据库，同时确保缓存一致性问题，即保证查数据、刷新缓存单线程执行
+			distributedLockForSpike.lockSpike(spikeId);
+			// 重新校验是否被其他线程刷新了
+			spikeInRedis = redisManager.getSpike(spikeId);
+			if (spikeInRedis.getStartAt() == null||spikeInRedis.getEndAt() == null||spikeInRedis.getPrice() == null) {
+				// redis 查出的结果无效则还是在数据库中取
+				spikeInRedis = spikeMapper.selectByPrimaryKey(spikeId);
+				// 刷新缓存
+				redisManager.saveSpike(spikeInRedis);
 			}
+			distributedLockForSpike.unlockSpike(spikeId);
 		}
 		Date now = new Date();
 		// 在开始之前或结束之后则直接返回错误码
@@ -124,7 +127,7 @@ public class SpikeOrderService {
 	 * @param spikeOrderVo
 	 */
 	private void orderAndDecrementStock(SpikeOrderVo spikeOrderVo){
-		mqSender.sendToSpikeTopic(spikeOrderVo);
+		mqSenderManager.sendToSpikeTopic(spikeOrderVo);
 	}
 
 	/**
@@ -132,9 +135,10 @@ public class SpikeOrderService {
 	 * 供 rabbitmq 的 received 调用
 	 * @param spikeOrderVo
 	 */
-	void resolveOrder(SpikeOrderVo spikeOrderVo){
-		tryLock(spikeOrderVo.getSpikeId());
+	public void resolveOrder(SpikeOrderVo spikeOrderVo){
 		try{
+			// 加锁，解决超卖等问题，同时缓存一致性问题可以解决
+			distributedLockForSpike.lockSpike(spikeOrderVo.getSpikeId());
 			transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
@@ -184,23 +188,11 @@ public class SpikeOrderService {
 		}catch (Exception e){
 			resolverOrderFailed(spikeOrderVo);
 		}finally {
-			redisManager.unlockSpike(spikeOrderVo.getSpikeId());
+			distributedLockForSpike.unlockSpike(spikeOrderVo.getSpikeId());
 		}
 	}
 
-	private void tryLock(Long spikeId) {
-		while (true){
-			if(redisManager.lockSpike(spikeId)){
-				return;
-			}
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
+	// 执行该方法时，锁还未释放
 	private void resolverOrderFailed(SpikeOrderVo spikeOrderVo){
 		// 未成功交易应该给缓存中加一，并取消缓存中的订单，给轮询的订单设置状态，设置轮询消息只用到了用户 id 和商品 id
 		SpikeOrder spikeOrder = new SpikeOrder(null, spikeOrderVo.getUserId(), spikeOrderVo.getSpikeId(), null, (byte) 1,null);
@@ -216,8 +208,6 @@ public class SpikeOrderService {
 
 
 	public Result check(User user, Long spikeId) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		// 取轮询只用了用户 id 和商品 id
 		SpikeOrder spikeOrder = new SpikeOrder(null, user.getId(), spikeId, null, (byte) 1,null);
 		spikeOrder = redisManager.getSpikeOrder(spikeOrder);
@@ -235,8 +225,6 @@ public class SpikeOrderService {
 	}
 
 	public Result index(User user, String order, int page) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		int p = commonService.pageFormat(page);
 		String o = commonService.orderFormat(order);
 		List<SpikeOrderAndSpikeVo> spikeOrderAndSpikeVos = spikeOrderMapper.selectSpikeOrderAndSpikeVoByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);

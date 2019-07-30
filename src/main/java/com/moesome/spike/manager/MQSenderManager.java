@@ -1,4 +1,4 @@
-package com.moesome.spike.service;
+package com.moesome.spike.manager;
 
 import com.moesome.spike.config.MQConfig;
 import com.moesome.spike.model.domain.User;
@@ -10,7 +10,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MQSender {
+public class MQSenderManager {
 	@Autowired
 	AmqpTemplate amqpTemplate;
 

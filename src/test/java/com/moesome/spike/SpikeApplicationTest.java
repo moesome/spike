@@ -22,6 +22,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.servlet.http.Cookie;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -216,6 +217,7 @@ public class SpikeApplicationTest {
 	private Spike storeSpike(boolean isStart){
 		SpikeVo spikeVo = new SpikeVo();
 		spikeVo.setStock(2);
+		spikeVo.setPrice(BigDecimal.ZERO);
 		spikeVo.setEndAt(new Date(System.currentTimeMillis()+100000));
 		if (isStart){
 			spikeVo.setStartAt(new Date(System.currentTimeMillis()-100000));

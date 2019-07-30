@@ -1,6 +1,7 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.manager.MQSenderManager;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.dao.SpikeOrderMapper;
 import com.moesome.spike.model.dao.UserMapper;
@@ -12,7 +13,6 @@ import com.moesome.spike.model.pojo.vo.SendVo;
 import com.moesome.spike.model.pojo.vo.SpikeAndUserContactWayVo;
 import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.result.Result;
-import com.moesome.spike.model.pojo.result.SpikeOrderResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -40,7 +40,7 @@ public class SendService {
 	private UserMapper userMapper;
 
 	@Autowired
-	private MQSender mqSender;
+	private MQSenderManager mqSenderManager;
 
 	@Autowired
 	private JavaMailSender javaMailSender;
@@ -49,8 +49,6 @@ public class SendService {
 	private TransactionTemplate transactionTemplate;
 
 	public Result remindToSendProduction(User user, Long spikeOrderId) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		SpikeOrder spikeOrder = spikeOrderMapper.selectByPrimaryKey(spikeOrderId);
 		if (spikeOrder.getUserId().equals(user.getId())){
 			Long spikeId = spikeOrder.getSpikeId();
@@ -68,7 +66,7 @@ public class SendService {
 				mailVo.setTitle("发货提醒");
 				mailVo.setTo(spikeAndUserContactWayBySpikeId.getEmail());
 				mailVo.setMsg("用户"+user.getUsername()+"提醒您及时发送礼物");
-				mqSender.sendToEmailTopic(mailVo);
+				mqSenderManager.sendToEmailTopic(mailVo);
 				return SendResult.NOTICE_SUCCESS;
 			}else{
 				return SendResult.WRONG_REQUEST;
@@ -79,19 +77,14 @@ public class SendService {
 	}
 
 	public Result index(int page, String order, User user) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		String o = commonService.orderFormat(order);
 		int p = commonService.pageFormat(page);
 		List<SendVo> sendVos = userMapper.selectSendVoByUserId(user.getId(), o, (p - 1) * 10, 10);
-		// System.out.println(sendVos);
 		Integer count = userMapper.countSendVoByUserId(user.getId());
 		return new SendResult(SuccessCode.OK,sendVos,count);
 	}
 
 	public Result sendProduction(User user, Long spikeOrderId) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		Long spikeOrderOwnerId = spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
 		if (spikeOrderOwnerId.equals(user.getId())){
 			try{
@@ -114,11 +107,8 @@ public class SendService {
 	}
 
 	public Result receivedProduction(User user, Long spikeOrderId){
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		Long spikeOrderOwnerId = spikeOrderMapper.selectSpikeOwnerIdBySpikeOrderId(spikeOrderId);
 		if (spikeOrderOwnerId.equals(user.getId())){
-
 			try{
 				transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 					@Override
@@ -145,7 +135,7 @@ public class SendService {
 
 	// 发送邮件操作耗时，扔给线程池处理，避免占用了过多的消费者数使得其他消费者无法得到执行
 	@Async
-	void resolveSendMail(MailVo mailVo){
+	public void resolveSendMail(MailVo mailVo){
 		System.out.println("处理邮件");
 		SimpleMailMessage message = new SimpleMailMessage();
 		message.setFrom("contact@mail.moesome.com");

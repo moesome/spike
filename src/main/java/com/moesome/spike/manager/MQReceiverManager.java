@@ -1,9 +1,11 @@
-package com.moesome.spike.service;
+package com.moesome.spike.manager;
 
 import com.moesome.spike.config.MQConfig;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.model.pojo.vo.MailVo;
 import com.moesome.spike.model.pojo.vo.SpikeOrderVo;
+import com.moesome.spike.service.SendService;
+import com.moesome.spike.service.SpikeOrderService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.annotation.RabbitListeners;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 
 @Service
-public class MQReceiver {
+public class MQReceiverManager {
 	@Autowired
 	private SpikeOrderService spikeOrderService;
 

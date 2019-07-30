@@ -1,6 +1,7 @@
 package com.moesome.spike.service;
 
 import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.manager.DistributedLockForSpike;
 import com.moesome.spike.manager.RedisManager;
 import com.moesome.spike.model.dao.SpikeMapper;
 import com.moesome.spike.model.domain.Spike;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 @Service
@@ -26,13 +26,15 @@ public class SpikeService {
 	private SpikeMapper spikeMapper;
 
 	@Autowired
+	private DistributedLockForSpike distributedLockForSpike;
+
+	@Autowired
 	private RedisManager redisManager;
 	/**
 	 * 优化秒杀，将秒杀要用到的一些参数写入缓存，如果这些值能通过验证再写入数据库
 	 */
 	public void init() {
 		List<Spike> spikes = spikeMapper.selectAll();
-		int i = 0;//计数
 		for (Spike spike : spikes){
 			// 缓存秒杀验证数据
 			redisManager.saveSpike(spike);
@@ -58,8 +60,6 @@ public class SpikeService {
 
 
 	public Result manage(User user, String order, int page) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		String o = commonService.orderFormat(order);
 		int p = commonService.pageFormat(page);
 		List<Spike> spikeList = spikeMapper.selectByUserIdPagination(user.getId(),o, (p - 1) * 10, 10);
@@ -68,8 +68,6 @@ public class SpikeService {
 	}
 
 	public Result store(User user, SpikeVo spikeVo) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		Spike spike = new Spike();
 		Date now = new Date();
 		spike.setCreatedAt(now);
@@ -85,8 +83,6 @@ public class SpikeService {
 
 
 	public Result show(User user,Long id) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		List<Spike> list = new ArrayList<>(1);
 		Spike spike = getSpikeById(id);// 从数据库中取出
 		if (spike != null && spike.getUserId().equals(user.getId())){ // 校验取出的数据用户是否拥有
@@ -99,18 +95,31 @@ public class SpikeService {
 
 	public Result detail(Long id) {
 		List<Spike> list = new ArrayList<>(1);
-		Spike spike = getSpikeById(id);// 从数据库中取出
-		if (spike != null){
-			list.add(spike);
-			return new SpikeResult(SuccessCode.OK,list,1);
-		}else{
-			return AuthResult.AUTH_FAILED;
+		Spike spike = redisManager.getSpike(id);
+		if (spike == null){
+			distributedLockForSpike.lockSpike(id);
+			spike = redisManager.getSpike(id);
+			if (spike == null){
+				spike = getSpikeById(id);
+				// 处理缓存穿透
+				if (spike == null){
+					spike = new Spike();
+					spike.setId(id);
+					spike.setStock(Integer.MIN_VALUE);
+				}
+				redisManager.saveSpike(spike);
+			}
+			distributedLockForSpike.unlockSpike(id);
 		}
+		if (spike.getStock() == null || spike.getStock() == Integer.MIN_VALUE){
+			// 发生缓存穿透
+			return SpikeResult.REQUEST_ERR;
+		}
+		list.add(spike);
+		return new SpikeResult(SuccessCode.OK,list,1);
 	}
 
 	public Result update(User user, SpikeVo spikeVo,Long id) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		// 从数据库中根据传入的 spike id 取出
 		Spike spikeInDB = getSpikeById(id);
 		Date now = new Date();
@@ -134,8 +143,6 @@ public class SpikeService {
 	}
 
 	public Result delete(User user,Long id){
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		Spike spike = getSpikeById(id);// 从数据库中取出
 		if (spike != null && spike.getUserId().equals(user.getId())){ // 校验取出的数据用户是否拥有
 			// 删除数据库

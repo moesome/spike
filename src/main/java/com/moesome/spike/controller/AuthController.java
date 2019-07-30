@@ -1,9 +1,12 @@
 package com.moesome.spike.controller;
 
+import com.moesome.spike.exception.message.SuccessCode;
+import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.vo.AuthVo;
 import com.moesome.spike.model.pojo.result.Result;
 import com.moesome.spike.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +24,7 @@ public class AuthController {
 	 * @return
 	 */
 	@GetMapping("check")
-	public Result check(@CookieValue(required = false) String sessionId, HttpServletResponse httpServletResponse){
+	public Result check(@CookieValue String sessionId, HttpServletResponse httpServletResponse){
 		return authService.check(sessionId, httpServletResponse);
 	}
 
@@ -37,7 +40,7 @@ public class AuthController {
 	}
 
 	@PostMapping("logout")
-	public Result logout(@CookieValue(required = false) String sessionId, HttpServletResponse httpServletResponse){
+	public Result logout(@CookieValue String sessionId, HttpServletResponse httpServletResponse){
 		return authService.logout(sessionId,httpServletResponse);
 	}
 }

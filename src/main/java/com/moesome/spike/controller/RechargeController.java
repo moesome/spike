@@ -23,8 +23,6 @@ public class RechargeController {
 
 	@GetMapping("recharge/{coin}")
 	public Result recharge(HttpServletResponse httpServletResponse, User user,@PathVariable  BigDecimal coin){
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		if (coin.compareTo(BigDecimal.ZERO) <= 0)
 			return Result.REQUEST_ERR;
 		return rechargeService.recharge(httpServletResponse,user,coin);

@@ -1,5 +1,6 @@
 package com.moesome.spike.resolver;
 
+import com.moesome.spike.exception.exception.AuthFailedException;
 import com.moesome.spike.model.domain.User;
 import com.moesome.spike.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 	@Autowired
 	private RedisTemplate<String,User> redisTemplate;
 
+	private static final AuthFailedException authFailedException = new AuthFailedException();
+
 	@Override
 	public boolean supportsParameter(MethodParameter parameter){
 		return User.class.equals(parameter.getParameterType());
@@ -37,7 +40,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
 		}else if (!StringUtils.isEmpty(cookieSessionId)){
 			sessionId = cookieSessionId;
 		}else{
-			return null;
+			throw authFailedException;
 		}
 		return redisTemplate.opsForValue().get(sessionId);
 	}

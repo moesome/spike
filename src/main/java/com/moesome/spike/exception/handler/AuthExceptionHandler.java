@@ -1,6 +1,8 @@
 package com.moesome.spike.exception.handler;
 
+import com.moesome.spike.exception.exception.AuthFailedException;
 import com.moesome.spike.exception.message.ErrorCode;
+import com.moesome.spike.model.pojo.result.AuthResult;
 import com.moesome.spike.model.pojo.result.ExceptionResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,4 +18,10 @@ public class AuthExceptionHandler {
 	public ResponseEntity<ExceptionResult> methodArgumentNotValidExceptionHandler(){
 		return ResponseEntity.status(HttpStatus.OK).body(new ExceptionResult(ErrorCode.REQUEST_ERR));
 	}
+
+	@ExceptionHandler(value = AuthFailedException.class)
+	public AuthResult authFailedExceptionHandler(){
+		return AuthResult.UNAUTHORIZED;
+	}
+
 }

@@ -44,9 +44,6 @@ public class AuthService {
 	}
 
 	public Result check(String sessionId, HttpServletResponse httpServletResponse) {
-		if (StringUtils.isEmpty(sessionId)){
-			return AuthResult.AUTH_FAILED;
-		}
 		User user = redisManager.getUserBySessionId(sessionId);
 		if (user == null){
 			return AuthResult.AUTH_FAILED;
@@ -57,12 +54,8 @@ public class AuthService {
 	}
 
 	public Result logout(String sessionId, HttpServletResponse httpServletResponse) {
-		if (!StringUtils.isEmpty(sessionId)){
-			commonService.setCookie("",httpServletResponse);
-			redisManager.refreshUser(sessionId,0);
-			return new AuthResult(SuccessCode.OK);
-		}else{
-			return AuthResult.AUTH_FAILED;
-		}
+		commonService.setCookie("",httpServletResponse);
+		redisManager.refreshUser(sessionId,0);
+		return new AuthResult(SuccessCode.OK);
 	}
 }

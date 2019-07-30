@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * 存放公用 redis 操作
  */
 @Service
-public class RedisManager {
+public class RedisManager{
 	public static final Object SPIKE_REFRESH_LOCK = new Object();
 
 	@Autowired
@@ -40,6 +40,7 @@ public class RedisManager {
 	@Autowired
 	private RedisTemplate<String,Long> redisTemplateForRechargeId;
 
+	private static final Spike TEMP_SPIKE = new Spike();
 
 	public static final SpikeOrder ORDER_FAILED = new SpikeOrder(-1L,null,null,null,null,null);
 
@@ -146,6 +147,8 @@ public class RedisManager {
 
 	/**
 	 * 取出商品部分信息（price,startAt,endAt）
+	 * 返回 null 表示缓存中没有查到
+	 * 返回空 spike 对象表示缓存中查到了防止缓存穿透的临时值
 	 * @param spikeId
 	 * @return
 	 */
@@ -162,7 +165,17 @@ public class RedisManager {
 		list.add("createdAt");
 		list.add("updatedAt");
 		List<Object> multiGet = redisTemplateForSpike.opsForHash().multiGet("spike" + spikeId,list);
+		// 查询到发生缓存穿透时存入的临时值，直接返回，跳过查询数据库阶段
+		if (multiGet.get(3) != null && Integer.MIN_VALUE == (int)multiGet.get(3)){
+			return TEMP_SPIKE;
+		}
+		for (Object obj : multiGet){
+			if (obj == null){
+				return null;
+			}
+		}
 		Spike spike = new Spike();
+		spike.setId(spikeId);
 		spike.setName((String)multiGet.get(0));
 		spike.setUserId(Long.valueOf(multiGet.get(1).toString()));
 		spike.setDetail((String) multiGet.get(2));
@@ -254,11 +267,12 @@ public class RedisManager {
 		return (Integer)redisTemplateForSpike.opsForValue().get("pageCount");
 	}
 */
-	public Boolean lockSpike(Long spikeId){
+
+	public Boolean saveSpikeIdIfAbsent(Long spikeId){
 		return redisTemplateForSpike.opsForValue().setIfAbsent("lock:spike-"+spikeId,true,10,TimeUnit.SECONDS);
 	}
 
-	public Boolean unlockSpike(Long spikeId){
-		return redisTemplateForSpike.delete("lock:spike-"+spikeId);
+	public void deleteSpikeId(Long spikeId){
+		redisTemplateForSpike.delete("lock:spike-"+spikeId);
 	}
 }

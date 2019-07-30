@@ -53,8 +53,6 @@ public class UserService {
 	}
 
 	public Result update(String sessionId, User user, UserVo userVo, Long id) {
-		if (user == null)
-			return AuthResult.UNAUTHORIZED;
 		// 判断传入用户是否和缓存中相等
 		if (user.getId().equals(id)){
 			transformUserVoToUser(userVo, user);
